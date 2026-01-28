@@ -53,11 +53,12 @@ Errors (if any):
 
 try:
     token = os.getenv('GITHUB_TOKEN')
+    
     if not token:
         print("Error: GITHUB_TOKEN environment variable not set")
         exit(1)
     endpoint = "https://models.github.ai/inference"
-    model_name = "gpt-4o"
+    model_name = "gpt-4o-mini"
     
     print("Creating OpenAI client...")
     client = OpenAI(
