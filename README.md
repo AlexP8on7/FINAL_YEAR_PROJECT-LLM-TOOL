@@ -1,6 +1,6 @@
 # Kubernetes AI Monitor
 
-AI-powered Kubernetes cluster monitoring tool that analyzes your juice-shop pod status and generates detailed markdown reports.
+AI-powered Kubernetes cluster monitoring tool that analyzes your pod health status and generates detailed markdown reports.
 
 ## Prerequisites
 
