@@ -69,7 +69,7 @@ function App() {
                   Verify your Kubernetes cluster connection and pod status
                 </p>
                 <button 
-                  className="btn btn-info btn-lg"
+                  className="btn-check-status"
                   onClick={checkStatus}
                   disabled={statusLoading}
                 >
@@ -95,7 +95,7 @@ function App() {
                   Get comprehensive AI-powered insights about your cluster
                 </p>
                 <button 
-                  className="btn btn-success btn-lg"
+                  className="btn-Ai-analysis"
                   onClick={runAnalysis}
                   disabled={loading}
                 >
@@ -124,7 +124,7 @@ function App() {
         {statusResult && (
           <div className="card mb-4">
             <div className="card-header">
-              <h5 className="mb-0">📊 Cluster Status</h5>
+              <h5 className="mb-0"> Cluster Status</h5>
             </div>
             <div className="card-body">
               {statusResult.error ? (
@@ -133,8 +133,23 @@ function App() {
                 </div>
               ) : (
                 <div className="alert alert-success">
-                  <strong>✅ Connected to cluster!</strong><br />
-                  Found {statusResult.status ? statusResult.status.split('\n').length - 1 : 0} pods
+                  <strong> Connected to cluster!</strong><br />
+                  {(() => {
+                    const pods = statusResult.status ? 
+                      statusResult.status.split('\n')
+                        .filter(line => line.trim() && !line.startsWith('NAME'))
+                        .map(line => line.split(/\s+/)[0]) : [];
+                    return (
+                      <>
+                        Found {pods.length} pod{pods.length !== 1 ? 's' : ''}:
+                        <ul className="mb-0 mt-2">
+                          {pods.map((podName, index) => (
+                            <li key={index}><code>{podName}</code></li>
+                          ))}
+                        </ul>
+                      </>
+                    );
+                  })()} 
                 </div>
               )}
             </div>
@@ -146,7 +161,7 @@ function App() {
           <>
             <div className="card mb-4">
               <div className="card-header d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">🎯 AI Analysis Results</h5>
+                <h5 className="mb-0"> AI Analysis Results</h5>
                 <small className="text-muted">
                   {analysisResult.timestamp} | Saved: {analysisResult.filename}
                 </small>
@@ -160,7 +175,7 @@ function App() {
 
             <div className="card mb-4">
               <div className="card-header">
-                <h6 className="mb-0">📋 Raw Cluster Data</h6>
+                <h6 className="mb-0"> Raw Cluster Data</h6>
               </div>
               <div className="card-body">
                 <div className="cluster-data">
