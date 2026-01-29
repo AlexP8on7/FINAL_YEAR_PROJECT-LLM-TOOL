@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import AdvancedSpinner from './AdvancedSpinner';
 import './App.css';
 
 function App() {
@@ -190,7 +191,7 @@ function App() {
         {loading && (
           <div className="loading-spinner">
             <div className="text-center">
-              <div className="spinner-border text-primary" style={{width: '3rem', height: '3rem'}} />
+              <AdvancedSpinner />
               <p className="mt-3">AI is analyzing your cluster...</p>
             </div>
           </div>
