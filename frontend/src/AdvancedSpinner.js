@@ -11,17 +11,17 @@ function AdvancedSpinner() {
   const rotationFix = `rotate(-90,${halfway},${halfway})`;
   
   const rings = [
-    { color: "hsl(223, 90%, 50%)", radius: 48, rotationStart: 0, rotationEnd: 270, strokeWidth: 4 },
-    { color: "hsl(283, 90%, 50%)", radius: 38, rotationStart: 0, rotationEnd: 540, strokeWidth: 3 },
-    { color: "hsl(343, 90%, 50%)", radius: 31, rotationStart: 0, rotationEnd: 135, strokeWidth: 2 },
-    { color: "hsl(43, 90%, 60%)", radius: 26, rotationStart: 0, rotationEnd: 63, strokeWidth: 2 },
-    { color: "hsl(223, 90%, 50%)", radius: 21, rotationStart: 0, rotationEnd: 63, strokeWidth: 2 },
+    { color: "hsl(0, 0.00%, 0.00%)", radius: 48, rotationStart: 0, rotationEnd: 270, strokeWidth: 4 },
+    { color: "hsl(130, 93.50%, 42.40%)", radius: 38, rotationStart: 0, rotationEnd: 540, strokeWidth: 3 },
+    { color: "hsl(46, 89.80%, 50.00%)", radius: 31, rotationStart: 0, rotationEnd: 135, strokeWidth: 2 },
+    { color: "hsl(0, 0.00%, 0.00%)", radius: 26, rotationStart: 0, rotationEnd: 63, strokeWidth: 2 },
+    { color: "hsl(64, 79.70%, 53.70%)", radius: 21, rotationStart: 0, rotationEnd: 63, strokeWidth: 2 },
     { color: "hsla(223, 90%, 90%, 0.5)", radius: 5, rotationStart: 0, rotationEnd: 135, strokeWidth: 2 }
   ];
   
   const solidCircles = [
     { color: "hsla(223, 90%, 50%, 0.5)", radius: 15 },
-    { color: "hsla(223, 90%, 50%, 0.5)", radius: 15 }
+    { color: "hsl(0, 74.90%, 45.30%)", radius: 15 }
   ];
   
   const duration = 4000;
