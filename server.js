@@ -3,11 +3,12 @@ const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const OpenAI = require('openai');
+const cors = require('cors');
 
 const app = express();
 const PORT = 3001;
 
-
+app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 

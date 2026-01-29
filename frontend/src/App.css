@@ -31,3 +31,25 @@
     transform: rotate(360deg);
   }
 }
+
+.btn-check-status {
+    background: #4e54c8;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #f1f1f1, #3d0311);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #0e1a5e, #1a37db); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+}
+
+.btn-Ai-analysis {
+    background: #4e54c8;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #f1f1f1, #3d0311);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #09270d, #04940b); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+}
