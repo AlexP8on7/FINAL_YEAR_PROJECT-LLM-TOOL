@@ -53,6 +53,22 @@
     font-size: 1.2rem;
     min-width: 180px;
 }
+
+.btn-simulate-attack {
+    background: linear-gradient(to right, #8B0000, #DC143C); /* Dark red to crimson gradient */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+.btn-simulate-attack:hover {
+    background: linear-gradient(to right, #A0522D, #FF6347); /* Lighter red on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
 .spinner {
   width: 40px;
   height: 40px;

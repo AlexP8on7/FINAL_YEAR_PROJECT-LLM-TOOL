@@ -1,29 +1,39 @@
-# Kubernetes AI Monitor
+# LLM Orchestration Analyser
 
-AI-powered Kubernetes cluster monitoring tool that analyzes your pod health status and generates detailed markdown reports.
+AI-powered Kubernetes cluster monitoring tool that analyzes your pod health status and generates detailed markdown reports. Now includes OWASP ZAP security testing integration!
+
+## Features
+
+ **Cluster Monitoring**: Real-time Kubernetes pod health analysis
+ **AI Analysis**: GPT-4 powered insights and recommendations  
+ **Security Testing**: OWASP ZAP vulnerability scanning
+ **Web Dashboard**: React-based frontend interface
+ **Report Generation**: Automated markdown reports
 
 ## Prerequisites
 
 - Python 3.8+
+- Node.js 14+
+- Docker (for OWASP ZAP)
 - kubectl configured with cluster access
 - GitHub account with access to GitHub Models
+- Juice Shop deployed in your Kubernetes cluster
 
 ## Setup Instructions
 
-### 1. Install Python Dependencies
+### 1. Install Dependencies
 
 ```bash
-# Create virtual environment
-python3 -m venv venv
+# Install Node.js dependencies
+npm install
 
-# Activate virtual environment
-# On Linux/WSL:
-source venv/bin/activate
-# On Windows:
-venv\Scripts\activate
+# Install frontend dependencies
+cd frontend
+npm install
+cd ..
 
-# Install required packages
-pip install openai requests
+# Setup OWASP ZAP (requires Docker)
+bash setup-zap.sh
 ```
 
 ### 2. Configure GitHub Token
@@ -60,26 +70,45 @@ kubectl get pods -l app=juice-shop
 
 ## Usage
 
-Run the monitoring tool:
+### Start the Application
 
 ```bash
-python3 main.py
+# Start the backend server
+node server.js
+
+# In a new terminal, start the frontend
+cd frontend
+npm start
 ```
+
+### Access the Web Interface
+
+Open your browser to `http://localhost:3000`
+
+### Available Features
+
+1. **Quick Status Check**: Verify cluster connectivity and pod status
+2. **AI Analysis**: Get comprehensive AI insights about your cluster
+3. **Simulate Attack!**: Run OWASP ZAP security scan against Juice Shop
 
 The tool will:
 1. Fetch real-time data from your Kubernetes cluster
 2. Analyze the juice-shop pod status using AI
-3. Generate a timestamped markdown report in the `Reports/` folder
+3. Run security scans using OWASP ZAP
+4. Generate timestamped markdown reports in the `Reports/` folder
 
 ## Output
 
-Reports are saved as: `Reports/juice-shop-analysis_YYYY-MM-DD_HH-MM-SS.md`
+Reports are saved in the `Reports/` folder:
+- **Cluster Analysis**: `juice-shop-analysis_YYYY-MM-DD_HH-MM-SS.md`
+- **Security Analysis**: `zap-analysis_YYYY-MM-DD_HH-MM-SS.md`
 
 Each report includes:
 - Pod health status
-- Performance metrics
+- Performance metrics  
 - Error analysis
-- Recommendations
+- AI-powered recommendations
+- Security vulnerabilities (ZAP reports)
 - Recent logs analysis
 
 ## Troubleshooting
@@ -95,22 +124,12 @@ Each report includes:
 - Verify juice-shop is deployed: `kubectl get pods -l app=juice-shop`
 - Check if pods use different labels
 
-## Customization
+**"Docker not found" (ZAP attacks)**
+- Install Docker Desktop
+- Ensure Docker daemon is running
+- Run `docker pull owasp/zap2docker-stable`
 
-To monitor different applications, modify the kubectl commands in `get_kubectl_info()` function:
-
-```python
-# Change 'app=juice-shop' to your app label
-pod_status = subprocess.run(['kubectl', 'get', 'pods', '-l', 'app=your-app'], ...)
-```
-
-## File Structure
-
-```
-FINAL_YEAR_PROJECT-LLM-TOOL/
-├── main.py              # Main monitoring script
-├── README.md           # This file
-├── Reports/            # Generated analysis reports
-│   └── juice-shop-analysis_*.md
-└── venv/              # Python virtual environment
-```
+**"ZAP scan failed"**
+- Ensure juice-shop service is accessible
+- Check if port-forwarding is needed: `kubectl port-forward svc/juice-shop 3000:3000`
+- Verify Docker has sufficient resources
