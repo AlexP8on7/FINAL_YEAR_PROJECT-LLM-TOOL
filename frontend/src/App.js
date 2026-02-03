@@ -7,8 +7,10 @@ import './App.css';
 function App() {
   const [loading, setLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [zapLoading, setZapLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [statusResult, setStatusResult] = useState(null);
+  const [zapResult, setZapResult] = useState(null);
   const [error, setError] = useState(null);
 
   const checkStatus = async () => {
@@ -40,6 +42,21 @@ function App() {
     }
   };
 
+  const simulateAttack = async () => {
+    setZapLoading(true);
+    setError(null);
+    setZapResult(null);
+    
+    try {
+      const response = await axios.post('/api/zap-attack');
+      setZapResult(response.data);
+    } catch (err) {
+      setError('Failed to run ZAP attack: ' + err.message);
+    } finally {
+      setZapLoading(false);
+    }
+  };
+
   return (
     <div className="App">
       {/* Hero Section */}
@@ -61,7 +78,7 @@ function App() {
       <div className="container">
         {/* Action Cards */}
         <div className="row mb-5">
-          <div className="col-md-6 mb-4">
+          <div className="col-md-4 mb-4">
             <div className="card status-card h-100 shadow-sm">
               <div className="card-body text-center">
                 <div className="feature-icon"></div>
@@ -87,7 +104,7 @@ function App() {
             </div>
           </div>
 
-          <div className="col-md-6 mb-4">
+          <div className="col-md-4 mb-4">
             <div className="card status-card h-100 shadow-sm">
               <div className="card-body text-center">
                 <div className="feature-icon"></div>
@@ -107,6 +124,32 @@ function App() {
                     </>
                   ) : (
                     'Run AI Analysis'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-4 mb-4">
+            <div className="card status-card h-100 shadow-sm">
+              <div className="card-body text-center">
+                <div className="feature-icon"></div>
+                <h5 className="card-title">Security Test</h5>
+                <p className="card-text">
+                  Run OWASP ZAP security scan against your Juice Shop
+                </p>
+                <button 
+                  className="btn-simulate-attack"
+                  onClick={simulateAttack}
+                  disabled={zapLoading}
+                >
+                  {zapLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" />
+                      Attacking...
+                    </>
+                  ) : (
+                    'Simulate Attack!'
                   )}
                 </button>
               </div>
@@ -187,12 +230,32 @@ function App() {
           </>
         )}
 
+        {/* ZAP Attack Results */}
+        {zapResult && (
+          <div className="card mb-4">
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">🔒 Security Analysis Results</h5>
+              <small className="text-muted">
+                Target: {zapResult.targetUrl} | {zapResult.timestamp} | Saved: {zapResult.reportFile}
+              </small>
+            </div>
+            <div className="card-body">
+              <div className="analysis-content">
+                <ReactMarkdown>{zapResult.analysis}</ReactMarkdown>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Loading State */}
-        {loading && (
+        {(loading || zapLoading) && (
           <div className="loading-spinner">
             <div className="text-center">
               <AdvancedSpinner />
-              <p className="mt-3">AI is analyzing your cluster...</p>
+              <p className="mt-3">
+                {loading && "AI is analyzing your cluster..."}
+                {zapLoading && "Running OWASP ZAP security scan..."}
+              </p>
             </div>
           </div>
         )}

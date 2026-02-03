@@ -12,7 +12,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Get kubectl info function
 function getKubectlInfo() {
     return new Promise((resolve, reject) => {
         const commands = [
@@ -45,7 +44,6 @@ function getKubectlInfo() {
     });
 }
 
-// Analyze with AI function
 async function analyzeWithAI(clusterData) {
     try {
         const token = process.env.GITHUB_TOKEN;
@@ -62,7 +60,7 @@ async function analyzeWithAI(clusterData) {
             messages: [
                 {
                     role: "system",
-                    content: "You are a kubernetes expert. Analyze the provided cluster information and give insights about the juice-shop pod's name, health, performance, and any issues. Format your response in markdown."
+                    content: "You are a kubernetes expert. Analyze the provided cluster information and give insights about any crytical the juice-shop pod's name, health, performance, and any issues. Format your response in markdown."
                 },
                 {
                     role: "user",
@@ -81,10 +79,8 @@ async function analyzeWithAI(clusterData) {
     }
 }
 
-// Routes
 app.post('/api/analyze', async (req, res) => {
     try {
-        // Get cluster info
         const clusterInfo = await getKubectlInfo();
         
         const clusterData = `
@@ -101,10 +97,8 @@ Errors (if any):
 ${clusterInfo.errors}
 `;
 
-        // Analyze with AI
         const analysis = await analyzeWithAI(clusterData);
         
-        // Save report
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
         const reportsDir = 'Reports';
         
@@ -139,6 +133,148 @@ app.get('/api/status', async (req, res) => {
         res.json(clusterInfo);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+function runZapAttack(targetUrl) {
+    return new Promise((resolve, reject) => {
+        exec('hostname -I | cut -d" " -f1', (ipError, ipStdout, ipStderr) => {
+            const wslIP = ipStdout.trim() || '172.17.0.1';
+            const actualTarget = `http://${wslIP}:8080`;
+            
+            console.log(`Starting ZAP scan against: ${actualTarget}`);
+            const zapCmd = `docker run --rm --add-host=host.docker.internal:host-gateway -v "${process.cwd()}:/zap/wrk/:rw" zaproxy/zap-stable zap-baseline.py -t ${actualTarget} -J zap-report.json`;
+            
+            console.log(`Running command: ${zapCmd}`);
+            exec(zapCmd, { timeout: 60000 }, (error, stdout, stderr) => {
+                console.log('ZAP stdout:', stdout);
+                console.log('ZAP stderr:', stderr);
+                if (error) console.log('ZAP error:', error);
+                
+                try {
+                    const reportPath = path.join(process.cwd(), 'zap-report.json');
+                    if (fs.existsSync(reportPath)) {
+                        const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+                        resolve({
+                            success: true,
+                            report: report,
+                            stdout: stdout,
+                            stderr: stderr
+                        });
+                    } else {
+                        resolve({
+                            success: false,
+                            error: 'ZAP report not generated',
+                            stdout: stdout,
+                            stderr: stderr
+                        });
+                    }
+                } catch (parseError) {
+                    resolve({
+                        success: false,
+                        error: `Failed to parse ZAP report: ${parseError.message}`,
+                        stdout: stdout,
+                        stderr: stderr
+                    });
+                }
+            });
+        });
+    });
+}
+
+async function analyzeZapWithAI(zapResults) {
+    try {
+        const token = process.env.GITHUB_TOKEN;
+        if (!token) {
+            throw new Error('GITHUB_TOKEN environment variable not set');
+        }
+
+        // Sort alerts by risk level (High=3, Medium=2, Low=1, Info=0)
+        const sortedAlerts = zapResults.site?.[0]?.alerts?.sort((a, b) => {
+            return parseInt(b.riskcode) - parseInt(a.riskcode);
+        }) || [];
+
+        // Create minimal summary for AI with highest risks first
+        const summary = `ZAP Security Scan Results:
+- Target: ${zapResults.site?.[0]?.['@name'] || 'Unknown'}
+- Total Vulnerabilities: ${sortedAlerts.length}
+- High Risk: ${sortedAlerts.filter(a => a.riskcode === '3').length}
+- Medium Risk: ${sortedAlerts.filter(a => a.riskcode === '2').length}
+- Low Risk: ${sortedAlerts.filter(a => a.riskcode === '1').length}
+
+Top 5 Issues (Highest Risk First):
+${sortedAlerts.slice(0, 5).map((alert, i) => `${i+1}. ${alert.name} (${alert.riskdesc})`).join('\n') || 'None'}`;
+
+        const client = new OpenAI({
+            baseURL: 'https://models.github.ai/inference',
+            apiKey: token,
+        });
+
+        const response = await client.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a cybersecurity expert. Analyze OWASP ZAP scan summary and provide security insights in markdown format. Focus on the highest risk vulnerabilities first and explain their impact."
+                },
+                {
+                    role: "user",
+                    content: summary
+                }
+            ],
+            temperature: 0.3,
+            max_tokens: 1000,
+            model: "gpt-4o"
+        });
+
+        return response.choices[0].message.content;
+    } catch (error) {
+        throw new Error(`AI Analysis failed: ${error.message}`);
+    }
+}
+
+app.post('/api/zap-attack', async (req, res) => {
+    try {
+        const targetUrl = 'http://localhost:8080';
+        
+        const zapResults = await runZapAttack(targetUrl);
+        
+        if (!zapResults.success) {
+            return res.status(500).json({
+                success: false,
+                error: `ZAP scan failed: ${zapResults.error}`,
+                stdout: zapResults.stdout,
+                stderr: zapResults.stderr
+            });
+        }
+        
+        const aiAnalysis = await analyzeZapWithAI(zapResults.report);
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const reportsDir = 'Reports';
+        
+        if (!fs.existsSync(reportsDir)) {
+            fs.mkdirSync(reportsDir);
+        }
+        
+        const reportContent = `# OWASP ZAP Security Analysis\n\n**Target:** ${targetUrl}\n**Generated:** ${new Date().toLocaleString()}\n\n## AI Security Analysis\n\n${aiAnalysis}\n\n## Raw ZAP Results\n\n\`\`\`json\n${JSON.stringify(zapResults.report, null, 2)}\n\`\`\``;
+        
+        const filename = `${reportsDir}/zap-analysis_${timestamp}.md`;
+        fs.writeFileSync(filename, reportContent);
+        
+        res.json({
+            success: true,
+            analysis: aiAnalysis,
+            reportFile: filename,
+            targetUrl: targetUrl,
+            timestamp: new Date().toLocaleString()
+        });
+        
+    } catch (error) {
+        console.error('ZAP Attack Error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 });
 
