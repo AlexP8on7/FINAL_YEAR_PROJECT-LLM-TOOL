@@ -12,6 +12,9 @@ function App() {
   const [statusResult, setStatusResult] = useState(null);
   const [zapResult, setZapResult] = useState(null);
   const [error, setError] = useState(null);
+  const [statusExpanded, setStatusExpanded] = useState(false);
+  const [analysisExpanded, setAnalysisExpanded] = useState(false);
+  const [zapExpanded, setZapExpanded] = useState(false);
 
   const checkStatus = async () => {
     setStatusLoading(true);
@@ -167,83 +170,79 @@ function App() {
         {/* Status Result */}
         {statusResult && (
           <div className="card mb-4">
-            <div className="card-header">
-              <h5 className="mb-0"> Cluster Status</h5>
+            <div className="card-header" onClick={() => setStatusExpanded(!statusExpanded)} style={{cursor: 'pointer'}}>
+              <h5 className="mb-0 d-flex justify-content-between align-items-center">
+                 Cluster Status
+                <span>{statusExpanded ? '▼' : '▶'}</span>
+              </h5>
             </div>
-            <div className="card-body">
-              {statusResult.error ? (
-                <div className="alert alert-danger">
-                  Connection failed: {statusResult.error}
-                </div>
-              ) : (
-                <div className="alert alert-success">
-                  <strong> Connected to cluster!</strong><br />
-                  {(() => {
-                    const pods = statusResult.status ? 
-                      statusResult.status.split('\n')
-                        .filter(line => line.trim() && !line.startsWith('NAME'))
-                        .map(line => line.split(/\s+/)[0]) : [];
-                    return (
-                      <>
-                        Found {pods.length} pod{pods.length !== 1 ? 's' : ''}:
-                        <ul className="mb-0 mt-2">
-                          {pods.map((podName, index) => (
-                            <li key={index}><code>{podName}</code></li>
-                          ))}
-                        </ul>
-                      </>
-                    );
-                  })()} 
-                </div>
-              )}
-            </div>
+            {statusExpanded && (
+              <div className="card-body">
+                {statusResult.error ? (
+                  <div className="alert alert-danger">
+                    Connection failed: {statusResult.error}
+                  </div>
+                ) : (
+                  <div className="alert alert-success">
+                    <strong> Connected to cluster!</strong><br />
+                    {(() => {
+                      const pods = statusResult.status ? 
+                        statusResult.status.split('\n')
+                          .filter(line => line.trim() && !line.startsWith('NAME'))
+                          .map(line => line.split(/\s+/)[0]) : [];
+                      return (
+                        <>
+                          Found {pods.length} pod{pods.length !== 1 ? 's' : ''}:
+                          <ul className="mb-0 mt-2">
+                            {pods.map((podName, index) => (
+                              <li key={index}><code>{podName}</code></li>
+                            ))}
+                          </ul>
+                        </>
+                      );
+                    })()} 
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {/* Analysis Results */}
         {analysisResult && (
-          <>
-            <div className="card mb-4">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h5 className="mb-0"> AI Analysis Results</h5>
-                <small className="text-muted">
-                  {analysisResult.timestamp} | Saved: {analysisResult.filename}
-                </small>
-              </div>
+          <div className="card mb-4">
+            <div className="card-header" onClick={() => setAnalysisExpanded(!analysisExpanded)} style={{cursor: 'pointer'}}>
+              <h5 className="mb-0 d-flex justify-content-between align-items-center">
+                 AI Analysis Results
+                <span>{analysisExpanded ? '▼' : '▶'}</span>
+              </h5>
+            </div>
+            {analysisExpanded && (
               <div className="card-body">
                 <div className="analysis-content">
                   <ReactMarkdown>{analysisResult.analysis}</ReactMarkdown>
                 </div>
               </div>
-            </div>
-
-            <div className="card mb-4">
-              <div className="card-header">
-                <h6 className="mb-0"> Raw Cluster Data</h6>
-              </div>
-              <div className="card-body">
-                <div className="cluster-data">
-                  {analysisResult.clusterData}
-                </div>
-              </div>
-            </div>
-          </>
+            )}
+          </div>
         )}
 
         {/* ZAP Attack Results */}
         {zapResult && (
           <div className="card mb-4">
-            <div className="card-header d-flex justify-content-between align-items-center">
-              <h5 className="mb-0"> Security Analysis Results</h5>
-              <small className="text-muted">
-                Target: {zapResult.targetUrl} | {zapResult.timestamp} | Saved: {zapResult.reportFile}
-              </small>
+            <div className="card-header" onClick={() => setZapExpanded(!zapExpanded)} style={{cursor: 'pointer'}}>
+              <h5 className="mb-0 d-flex justify-content-between align-items-center">
+                 Security Analysis Results
+                <span>{zapExpanded ? '▼' : '▶'}</span>
+              </h5>
             </div>
-            <div className="card-body">
-              <div className="analysis-content">
-                <ReactMarkdown>{zapResult.analysis}</ReactMarkdown>
+            {zapExpanded && (
+              <div className="card-body">
+                <div className="analysis-content">
+                  <ReactMarkdown>{zapResult.analysis}</ReactMarkdown>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
