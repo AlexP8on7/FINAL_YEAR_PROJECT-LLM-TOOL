@@ -70,7 +70,7 @@ async function analyzeWithAI(clusterData) {
             temperature: 0.3,
             top_p: 1.0,
             max_tokens: 1000,
-            model: "gpt-4o"
+            model: "gpt-4.1"
         });
 
         return response.choices[0].message.content;
@@ -140,7 +140,7 @@ function runZapAttack(targetUrl) {
     return new Promise((resolve, reject) => {
         exec('hostname -I | cut -d" " -f1', (ipError, ipStdout, ipStderr) => {
             const wslIP = ipStdout.trim() || '172.17.0.1';
-            const actualTarget = `http://${wslIP}:8080`;
+            const actualTarget = `http://host.docker.internal:8080`;
             
             console.log(`Starting ZAP scan against: ${actualTarget}`);
             const zapCmd = `docker run --rm --add-host=host.docker.internal:host-gateway -v "${process.cwd()}:/zap/wrk/:rw" zaproxy/zap-stable zap-baseline.py -t ${actualTarget} -J zap-report.json`;

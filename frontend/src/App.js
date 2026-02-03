@@ -234,7 +234,7 @@ function App() {
         {zapResult && (
           <div className="card mb-4">
             <div className="card-header d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">🔒 Security Analysis Results</h5>
+              <h5 className="mb-0"> Security Analysis Results</h5>
               <small className="text-muted">
                 Target: {zapResult.targetUrl} | {zapResult.timestamp} | Saved: {zapResult.reportFile}
               </small>
