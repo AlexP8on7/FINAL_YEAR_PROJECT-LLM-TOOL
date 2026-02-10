@@ -8,13 +8,16 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [zapLoading, setZapLoading] = useState(false);
+  const [hydraLoading, setHydraLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [statusResult, setStatusResult] = useState(null);
   const [zapResult, setZapResult] = useState(null);
+  const [hydraResult, setHydraResult] = useState(null);
   const [error, setError] = useState(null);
   const [statusExpanded, setStatusExpanded] = useState(false);
   const [analysisExpanded, setAnalysisExpanded] = useState(false);
   const [zapExpanded, setZapExpanded] = useState(false);
+  const [hydraExpanded, setHydraExpanded] = useState(false);
 
   const checkStatus = async () => {
     setStatusLoading(true);
@@ -51,12 +54,27 @@ function App() {
     setZapResult(null);
     
     try {
-      const response = await axios.post('/api/zap-attack');
+      const response = await axios.post('/api/zap-aggressive');
       setZapResult(response.data);
     } catch (err) {
       setError('Failed to run ZAP attack: ' + err.message);
     } finally {
       setZapLoading(false);
+    }
+  };
+
+  const runHydraScan = async () => {
+    setHydraLoading(true);
+    setError(null);
+    setHydraResult(null);
+    
+    try {
+      const response = await axios.post('/api/hydra-scan');
+      setHydraResult(response.data);
+    } catch (err) {
+      setError('Failed to run Hydra scan: ' + err.message);
+    } finally {
+      setHydraLoading(false);
     }
   };
 
@@ -81,7 +99,7 @@ function App() {
       <div className="container">
         {/* Action Cards */}
         <div className="row mb-5">
-          <div className="col-md-4 mb-4">
+          <div className="col-md-3 mb-4">
             <div className="card status-card h-100 shadow-sm">
               <div className="card-body text-center">
                 <div className="feature-icon"></div>
@@ -107,7 +125,7 @@ function App() {
             </div>
           </div>
 
-          <div className="col-md-4 mb-4">
+          <div className="col-md-3 mb-4">
             <div className="card status-card h-100 shadow-sm">
               <div className="card-body text-center">
                 <div className="feature-icon"></div>
@@ -133,11 +151,11 @@ function App() {
             </div>
           </div>
 
-          <div className="col-md-4 mb-4">
+          <div className="col-md-3 mb-4">
             <div className="card status-card h-100 shadow-sm">
               <div className="card-body text-center">
                 <div className="feature-icon"></div>
-                <h5 className="card-title">Security Test</h5>
+                <h5 className="card-title">ZAP Security Test</h5>
                 <p className="card-text">
                   Run OWASP ZAP security scan against your Juice Shop
                 </p>
@@ -149,10 +167,36 @@ function App() {
                   {zapLoading ? (
                     <>
                       <span className="spinner-border spinner-border-sm me-2" />
-                      Attacking...
+                      Scanning...
                     </>
                   ) : (
-                    'Simulate Attack!'
+                    'ZAP Scan'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-3 mb-4">
+            <div className="card status-card h-100 shadow-sm">
+              <div className="card-body text-center">
+                <div className="feature-icon"></div>
+                <h5 className="card-title">Hydra Brute-Force</h5>
+                <p className="card-text">
+                  Test authentication security with password brute-forcing
+                </p>
+                <button 
+                  className="btn-hydra"
+                  onClick={runHydraScan}
+                  disabled={hydraLoading}
+                >
+                  {hydraLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" />
+                      Scanning...
+                    </>
+                  ) : (
+                    'Hydra Test'
                   )}
                 </button>
               </div>
@@ -232,7 +276,7 @@ function App() {
           <div className="card mb-4">
             <div className="card-header" onClick={() => setZapExpanded(!zapExpanded)} style={{cursor: 'pointer'}}>
               <h5 className="mb-0 d-flex justify-content-between align-items-center">
-                 Security Analysis Results
+                ZAP Security Analysis
                 <span>{zapExpanded ? '▼' : '▶'}</span>
               </h5>
             </div>
@@ -246,14 +290,34 @@ function App() {
           </div>
         )}
 
+        {/* Hydra Results */}
+        {hydraResult && (
+          <div className="card mb-4">
+            <div className="card-header" onClick={() => setHydraExpanded(!hydraExpanded)} style={{cursor: 'pointer'}}>
+              <h5 className="mb-0 d-flex justify-content-between align-items-center">
+               Hydra Brute-Force Results
+                <span>{hydraExpanded ? '▼' : '▶'}</span>
+              </h5>
+            </div>
+            {hydraExpanded && (
+              <div className="card-body">
+                <div className="analysis-content">
+                  <ReactMarkdown>{hydraResult.analysis}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Loading State */}
-        {(loading || zapLoading) && (
+        {(loading || zapLoading || hydraLoading) && (
           <div className="loading-spinner">
             <div className="text-center">
               <AdvancedSpinner />
               <p className="mt-3">
                 {loading && "AI is analyzing your cluster..."}
                 {zapLoading && "Running OWASP ZAP security scan..."}
+                {hydraLoading && "Running Hydra brute-force test..."}
               </p>
             </div>
           </div>
