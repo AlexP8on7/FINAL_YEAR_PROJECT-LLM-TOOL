@@ -185,7 +185,7 @@ ${low.slice(0, 5).map(formatAlert).join('\n') || 'None'}`;
             ],
             temperature: 0.3,
             max_tokens: 2000,
-            model: "gpt-4o"
+            model: "gpt-4.1"
         });
 
         return response.choices[0].message.content;
@@ -281,6 +281,102 @@ function runAggressiveZapAttack() {
     });
 }
 
+app.post('/api/nvd-scan', async (req, res) => {
+    try {
+        // Get current juice-shop pod
+        const getPodName = () => new Promise((resolve, reject) => {
+            exec(`kubectl get pods -l app=juice-shop -o jsonpath="{.items[0].metadata.name}"`, (error, stdout) => {
+                if (error || !stdout) reject(new Error('No juice-shop pod found'));
+                else resolve(stdout.trim());
+            });
+        });
+        
+        const podName = await getPodName();
+        
+        // Get image and version
+        const getImageInfo = () => new Promise((resolve) => {
+            exec(`kubectl get pod ${podName} -o jsonpath="{.spec.containers[0].image}"`, (error, stdout) => {
+                const version = stdout.match(/juice-shop:v?([\d.]+)/) || ['', 'unknown'];
+                resolve({ image: stdout.trim(), version: version[1] });
+            });
+        });
+        
+        const { image, version: juiceShopVersion } = await getImageInfo();
+        
+        // Search multiple CVE sources
+        const searches = ['node.js', 'express', 'angular', 'sqlite', 'juice-shop'];
+        const nvdPromises = searches.map(keyword => 
+            fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=${keyword}&resultsPerPage=5`)
+                .then(r => r.json())
+                .catch(() => ({ vulnerabilities: [] }))
+        );
+        
+        const nvdResults = await Promise.all(nvdPromises);
+        const allVulns = nvdResults.flatMap(r => r.vulnerabilities || []);
+        const totalResults = allVulns.length;
+        
+        const token = process.env.GITHUB_TOKEN;
+        if (!token) {
+            return res.status(500).json({ error: 'GITHUB_TOKEN not set' });
+        }
+        
+        const cves = allVulns.slice(0, 20).map(v => {
+            const cve = v.cve;
+            const cvss = cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseScore || 
+                        cve.metrics?.cvssMetricV2?.[0]?.cvssData?.baseScore || 'N/A';
+            return `${cve.id}: ${cve.descriptions?.[0]?.value?.substring(0, 150) || 'No description'}... (CVSS: ${cvss})`;
+        }).join('\n') || 'No CVEs found';
+        
+        const client = new OpenAI({
+            baseURL: 'https://models.github.ai/inference',
+            apiKey: token,
+        });
+        
+        const aiResponse = await client.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a vulnerability analyst. Analyze CVEs for juice-shop (Node.js/Express/Angular app). Focus on: 1) High-severity vulnerabilities in dependencies, 2) Specific risks for this stack, 3) Actionable remediation. Format in markdown."
+                },
+                {
+                    role: "user",
+                    content: `Analyze CVEs for juice-shop pod ${podName} (image: ${image}, version: ${juiceShopVersion}). Dependencies: Node.js, Express, Angular, SQLite.\n\nCVEs found:\n${cves}`
+                }
+            ],
+            temperature: 0.3,
+            max_tokens: 1500,
+            model: "gpt-4o"
+        });
+        
+        const aiAnalysis = aiResponse.choices[0].message.content;
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const reportsDir = 'Reports';
+        
+        if (!fs.existsSync(reportsDir)) {
+            fs.mkdirSync(reportsDir);
+        }
+        
+        const reportContent = `# NVD CVE Analysis - Juice Shop\n\n**Pod:** ${podName}\n**Image:** ${image}\n**Version:** ${juiceShopVersion}\n**Generated:** ${new Date().toLocaleString()}\n**Total CVEs Found:** ${totalResults}\n**Search Keywords:** ${searches.join(', ')}\n\n## AI Vulnerability Analysis\n\n${aiAnalysis}\n\n## CVE Details (Top 20)\n\n${cves}`;
+        
+        const filename = `${reportsDir}/nvd-juiceshop-analysis_${timestamp}.md`;
+        fs.writeFileSync(filename, reportContent);
+        
+        res.json({
+            success: true,
+            analysis: aiAnalysis,
+            reportFile: filename,
+            podName: podName,
+            version: juiceShopVersion,
+            image: image,
+            totalResults: totalResults,
+            timestamp: new Date().toLocaleString()
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Kubernetes AI Monitor API running at http://localhost:${PORT}`);
 });
@@ -289,16 +385,30 @@ function runHydraScan() {
     return new Promise((resolve) => {
         console.log(`Starting Hydra brute-force test against juice-shop`);
         
-        const hydraCmd = `docker run --rm --add-host=host.docker.internal:host-gateway vanhauser/hydra -l admin@juice-sh.op -p admin123 host.docker.internal http-post-form "/rest/user/login:email=^USER^&password=^PASS^:F=Invalid" -s 8080 -t 1 -w 10`;
+        // Create wordlists
+        const userList = 'admin@juice-sh.op\nuser@juice-sh.op\ntest@test.com\nadmin@admin.com\nbender@juice-sh.op';
+        const passList = 'admin123\npassword\n123456\nadmin\ntest\njuice\nOwasp123';
+        
+        fs.writeFileSync('users.txt', userList);
+        fs.writeFileSync('passwords.txt', passList);
+        
+        const hydraCmd = `docker run --rm --add-host=host.docker.internal:host-gateway -v "${process.cwd()}:/data" vanhauser/hydra -L /data/users.txt -P /data/passwords.txt host.docker.internal http-post-form "/rest/user/login:email=^USER^&password=^PASS^:S=token" -s 8080 -t 4 -w 10`;
         
         exec(hydraCmd, { timeout: 120000 }, (error, stdout, stderr) => {
             console.log('Hydra stdout:', stdout);
             console.log('Hydra stderr:', stderr);
             
+            // Cleanup
+            try {
+                fs.unlinkSync('users.txt');
+                fs.unlinkSync('passwords.txt');
+            } catch (e) {}
+            
             const output = stdout + '\n' + stderr;
             resolve({
                 success: true,
-                rawOutput: output || 'Hydra scan completed'
+                rawOutput: output || 'Hydra scan completed',
+                testedCombinations: 5 * 7 // users * passwords
             });
         });
     });
@@ -343,7 +453,7 @@ app.post('/api/hydra-scan', async (req, res) => {
             fs.mkdirSync(reportsDir);
         }
         
-        const reportContent = `# Hydra Brute-Force Analysis\n\n**Target:** juice-shop login\n**Generated:** ${new Date().toLocaleString()}\n\n## AI Security Analysis\n\n${aiAnalysis}\n\n## Raw Hydra Output\n\n\`\`\`\n${hydraResults.rawOutput}\n\`\`\``;
+        const reportContent = `# Hydra Brute-Force Analysis\n\n**Target:** juice-shop login\n**Generated:** ${new Date().toLocaleString()}\n**Combinations Tested:** ${hydraResults.testedCombinations || 'N/A'}\n\n## AI Security Analysis\n\n${aiAnalysis}\n\n## Raw Hydra Output\n\n\`\`\`\n${hydraResults.rawOutput}\n\`\`\``;
         
         const filename = `${reportsDir}/hydra-analysis_${timestamp}.md`;
         fs.writeFileSync(filename, reportContent);
