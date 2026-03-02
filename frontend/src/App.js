@@ -9,15 +9,21 @@ function App() {
   const [statusLoading, setStatusLoading] = useState(false);
   const [zapLoading, setZapLoading] = useState(false);
   const [hydraLoading, setHydraLoading] = useState(false);
+  const [nvdLoading, setNvdLoading] = useState(false);
+  const [codeLoading, setCodeLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [statusResult, setStatusResult] = useState(null);
   const [zapResult, setZapResult] = useState(null);
   const [hydraResult, setHydraResult] = useState(null);
+  const [nvdResult, setNvdResult] = useState(null);
+  const [codeResult, setCodeResult] = useState(null);
   const [error, setError] = useState(null);
   const [statusExpanded, setStatusExpanded] = useState(false);
   const [analysisExpanded, setAnalysisExpanded] = useState(false);
   const [zapExpanded, setZapExpanded] = useState(false);
   const [hydraExpanded, setHydraExpanded] = useState(false);
+  const [nvdExpanded, setNvdExpanded] = useState(false);
+  const [codeExpanded, setCodeExpanded] = useState(false);
 
   const checkStatus = async () => {
     setStatusLoading(true);
@@ -75,6 +81,36 @@ function App() {
       setError('Failed to run Hydra scan: ' + err.message);
     } finally {
       setHydraLoading(false);
+    }
+  };
+
+  const runNvdScan = async () => {
+    setNvdLoading(true);
+    setError(null);
+    setNvdResult(null);
+    
+    try {
+      const response = await axios.post('/api/nvd-scan', { keywords: 'kubernetes', resultsPerPage: 10 });
+      setNvdResult(response.data);
+    } catch (err) {
+      setError('Failed to run NVD scan: ' + err.message);
+    } finally {
+      setNvdLoading(false);
+    }
+  };
+
+  const runCodeScan = async () => {
+    setCodeLoading(true);
+    setError(null);
+    setCodeResult(null);
+    
+    try {
+      const response = await axios.post('/api/code-scan');
+      setCodeResult(response.data);
+    } catch (err) {
+      setError('Failed to run code scan: ' + err.message);
+    } finally {
+      setCodeLoading(false);
     }
   };
 
@@ -202,6 +238,58 @@ function App() {
               </div>
             </div>
           </div>
+
+          <div className="col-md-3 mb-4">
+            <div className="card status-card h-100 shadow-sm">
+              <div className="card-body text-center">
+                <div className="feature-icon"></div>
+                <h5 className="card-title">NVD CVE Scan</h5>
+                <p className="card-text">
+                  Check juice-shop CVEs from NVD database
+                </p>
+                <button 
+                  className="btn-nvd"
+                  onClick={runNvdScan}
+                  disabled={nvdLoading}
+                >
+                  {nvdLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" />
+                      Scanning...
+                    </>
+                  ) : (
+                    'NVD Scan'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-3 mb-4">
+            <div className="card status-card h-100 shadow-sm">
+              <div className="card-body text-center">
+                <div className="feature-icon"></div>
+                <h5 className="card-title">Source Code Scan</h5>
+                <p className="card-text">
+                  Extract and analyze juice-shop source code for vulnerabilities
+                </p>
+                <button 
+                  className="btn-code"
+                  onClick={runCodeScan}
+                  disabled={codeLoading}
+                >
+                  {codeLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" />
+                      Scanning...
+                    </>
+                  ) : (
+                    'Code Scan'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Error Display */}
@@ -309,8 +397,46 @@ function App() {
           </div>
         )}
 
+        {/* NVD Results */}
+        {nvdResult && (
+          <div className="card mb-4">
+            <div className="card-header" onClick={() => setNvdExpanded(!nvdExpanded)} style={{cursor: 'pointer'}}>
+              <h5 className="mb-0 d-flex justify-content-between align-items-center">
+                NVD CVE Analysis ({nvdResult.totalResults} vulnerabilities)
+                <span>{nvdExpanded ? '▼' : '▶'}</span>
+              </h5>
+            </div>
+            {nvdExpanded && (
+              <div className="card-body">
+                <div className="analysis-content">
+                  <ReactMarkdown>{nvdResult.analysis}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Code Scan Results */}
+        {codeResult && (
+          <div className="card mb-4">
+            <div className="card-header" onClick={() => setCodeExpanded(!codeExpanded)} style={{cursor: 'pointer'}}>
+              <h5 className="mb-0 d-flex justify-content-between align-items-center">
+                Source Code Vulnerability Analysis ({codeResult.filesAnalyzed} files)
+                <span>{codeExpanded ? '▼' : '▶'}</span>
+              </h5>
+            </div>
+            {codeExpanded && (
+              <div className="card-body">
+                <div className="analysis-content">
+                  <ReactMarkdown>{codeResult.analysis}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Loading State */}
-        {(loading || zapLoading || hydraLoading) && (
+        {(loading || zapLoading || hydraLoading || nvdLoading || codeLoading) && (
           <div className="loading-spinner">
             <div className="text-center">
               <AdvancedSpinner />
@@ -318,6 +444,8 @@ function App() {
                 {loading && "AI is analyzing your cluster..."}
                 {zapLoading && "Running OWASP ZAP security scan..."}
                 {hydraLoading && "Running Hydra brute-force test..."}
+                {nvdLoading && "Fetching CVE data from NVD database..."}
+                {codeLoading && "Extracting and analyzing source code..."}
               </p>
             </div>
           </div>

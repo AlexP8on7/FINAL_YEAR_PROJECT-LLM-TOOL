@@ -55,7 +55,7 @@
 }
 
 .btn-simulate-attack {
-    background: linear-gradient(to right, #8B0000, #DC143C); /* Dark red to crimson gradient */
+    background: linear-gradient(to right, #640606, #DC143C); /* Dark red to crimson gradient */
     color: #fff;
     border: 2px solid #eee;
     padding: 12px 24px;
@@ -65,7 +65,27 @@
 }
 
 .btn-hydra {
-    background: linear-gradient(to right, #9e6207, #d87b02); /*Dark Yellow to Gold */
+    background: linear-gradient(to right, #684107, #d87b02); /*Dark Yellow to Gold */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+.btn-nvd {
+    background: linear-gradient(to right, #360e24, #d80298); /*Dark Yellow to Gold */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+.btn-code {
+    background: linear-gradient(to right, #1a0e36, #6b02d8); /* Dark purple to violet */
     color: #fff;
     border: 2px solid #eee;
     padding: 12px 24px;

@@ -469,3 +469,114 @@ app.post('/api/hydra-scan', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+app.post('/api/code-scan', async (req, res) => {
+    try {
+        console.log('Starting code scan...');
+        
+        const getPodName = () => new Promise((resolve, reject) => {
+            exec(`kubectl get pods -l app=juice-shop -o jsonpath="{.items[0].metadata.name}"`, (error, stdout, stderr) => {
+                if (error) {
+                    console.error('Pod lookup error:', error.message, stderr);
+                    reject(new Error('No juice-shop pod found'));
+                } else if (!stdout) {
+                    reject(new Error('No juice-shop pod found'));
+                } else {
+                    console.log('Found pod:', stdout.trim());
+                    resolve(stdout.trim());
+                }
+            });
+        });
+        
+        const podName = await getPodName();
+        
+        // Fetch source code from GitHub juice-shop repository
+        const files = [
+            { path: 'routes/login.ts', url: 'https://raw.githubusercontent.com/juice-shop/juice-shop/master/routes/login.ts' },
+            { path: 'routes/search.ts', url: 'https://raw.githubusercontent.com/juice-shop/juice-shop/master/routes/search.ts' },
+            { path: 'lib/insecurity.ts', url: 'https://raw.githubusercontent.com/juice-shop/juice-shop/master/lib/insecurity.ts' },
+            { path: 'routes/basket.ts', url: 'https://raw.githubusercontent.com/juice-shop/juice-shop/master/routes/basket.ts' }
+        ];
+        
+        const fetchFile = async (file) => {
+            try {
+                console.log(`Fetching ${file.path} from GitHub...`);
+                const response = await fetch(file.url);
+                if (response.ok) {
+                    const content = await response.text();
+                    console.log(`Fetched ${file.path}: ${content.length} bytes`);
+                    return { file: file.path, content, success: true };
+                } else {
+                    console.error(`Failed to fetch ${file.path}: ${response.status}`);
+                    return { file: file.path, content: '', success: false };
+                }
+            } catch (error) {
+                console.error(`Error fetching ${file.path}:`, error.message);
+                return { file: file.path, content: '', success: false };
+            }
+        };
+        
+        const results = await Promise.all(files.map(fetchFile));
+        const successfulExtracts = results.filter(r => r.success);
+        
+        console.log(`Successfully extracted ${successfulExtracts.length}/${files.length} files`);
+        
+        if (successfulExtracts.length === 0) {
+            return res.status(500).json({ error: 'Failed to extract any source files. Check if juice-shop pod is running.' });
+        }
+        
+        const codeContext = successfulExtracts.map(r => `File: ${r.file}\n\`\`\`javascript\n${r.content.substring(0, 3000)}\n\`\`\``).join('\n\n');
+        
+        const token = process.env.GITHUB_TOKEN;
+        if (!token) {
+            return res.status(500).json({ error: 'GITHUB_TOKEN not set' });
+        }
+        
+        const client = new OpenAI({
+            baseURL: 'https://models.github.ai/inference',
+            apiKey: token,
+        });
+        
+        const aiResponse = await client.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a security code reviewer. Analyze the juice-shop source code for vulnerabilities, refer to specific CVE's and give refernces."
+                },
+                {
+                    role: "user",
+                    content: `Analyze these juice-shop source files for security vulnerabilities:\n\n${codeContext}`
+                }
+            ],
+            temperature: 0.2,
+            max_tokens: 2000,
+            model: "gpt-4o"
+        });
+        
+        const aiAnalysis = aiResponse.choices[0].message.content;
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const reportsDir = 'Reports';
+        
+        if (!fs.existsSync(reportsDir)) {
+            fs.mkdirSync(reportsDir);
+        }
+        
+        const reportContent = `# Source Code Vulnerability Analysis\n\n**Pod:** ${podName}\n**Files Analyzed:** ${successfulExtracts.length}/${files.length}\n**Generated:** ${new Date().toLocaleString()}\n\n## AI Security Analysis\n\n${aiAnalysis}\n\n## Extracted Files\n\n${successfulExtracts.map(r => `- ${r.file}`).join('\n')}`;
+        
+        const filename = `${reportsDir}/code-analysis_${timestamp}.md`;
+        fs.writeFileSync(filename, reportContent);
+        
+        res.json({
+            success: true,
+            analysis: aiAnalysis,
+            reportFile: filename,
+            podName: podName,
+            filesAnalyzed: successfulExtracts.length,
+            timestamp: new Date().toLocaleString()
+        });
+    } catch (error) {
+        console.error('Code scan error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
