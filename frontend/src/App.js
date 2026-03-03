@@ -60,7 +60,7 @@ function App() {
     setZapResult(null);
     
     try {
-      const response = await axios.post('/api/zap-aggressive');
+      const response = await axios.post('/api/zap-attack');
       setZapResult(response.data);
     } catch (err) {
       setError('Failed to run ZAP attack: ' + err.message);

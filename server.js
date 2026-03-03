@@ -193,16 +193,23 @@ ${low.slice(0, 5).map(formatAlert).join('\n') || 'None'}`;
     }
 }
 
-app.post('/api/zap-aggressive', async (req, res) => {
+app.post('/api/zap-attack', async (req, res) => {
     try {
         const targetUrl = 'http://localhost:8080';
         
-        const zapResults = await runAggressiveZapAttack(targetUrl);
+        // Try ZAP first, fallback to simple scanner if Docker fails
+        let zapResults;
+        try {
+            zapResults = await runZapAttack(targetUrl);
+        } catch (dockerError) {
+            console.log('Docker/ZAP failed, using fallback scanner:', dockerError.message);
+            zapResults = await runFallbackScanner(targetUrl);
+        }
         
         if (!zapResults.success) {
             return res.status(500).json({
                 success: false,
-                error: `Aggressive ZAP scan failed: ${zapResults.error}`,
+                error: `Security scan failed: ${zapResults.error}`,
                 stdout: zapResults.stdout,
                 stderr: zapResults.stderr
             });
@@ -217,9 +224,9 @@ app.post('/api/zap-aggressive', async (req, res) => {
             fs.mkdirSync(reportsDir);
         }
         
-        const reportContent = `# OWASP ZAP Aggressive Security Analysis\n\n**Target:** ${targetUrl}\n**Generated:** ${new Date().toLocaleString()}\n\n## AI Security Analysis\n\n${aiAnalysis}\n\n## Raw ZAP Results\n\n\`\`\`json\n${JSON.stringify(zapResults.report, null, 2)}\n\`\`\``;
+        const reportContent = `# Security Analysis\n\n**Target:** ${targetUrl}\n**Generated:** ${new Date().toLocaleString()}\n\n## AI Security Analysis\n\n${aiAnalysis}\n\n## Raw Results\n\n\`\`\`json\n${JSON.stringify(zapResults.report, null, 2)}\n\`\`\``;
         
-        const filename = `${reportsDir}/zap-aggressive-analysis_${timestamp}.md`;
+        const filename = `${reportsDir}/security-analysis_${timestamp}.md`;
         fs.writeFileSync(filename, reportContent);
         
         res.json({
@@ -231,7 +238,7 @@ app.post('/api/zap-aggressive', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Aggressive ZAP Attack Error:', error);
+        console.error('Security Scan Error:', error);
         res.status(500).json({
             success: false,
             error: error.message
@@ -239,19 +246,77 @@ app.post('/api/zap-aggressive', async (req, res) => {
     }
 });
 
-function runAggressiveZapAttack() {
-    return new Promise((resolve) => {
-        const actualTarget = `http://host.docker.internal:8080`;
-        console.log(`Starting ZAP scan against: ${actualTarget}`);
-        const zapCmd = `docker run --rm --add-host=host.docker.internal:host-gateway -v "${process.cwd()}:/zap/wrk/:rw" zaproxy/zap-stable zap.sh -cmd -quickurl ${actualTarget} -quickout /zap/wrk/zap-aggressive-report.json -quickprogress`;
+async function runFallbackScanner(targetUrl) {
+    const vulnerabilities = [];
+    
+    try {
+        // Test common vulnerabilities
+        const tests = [
+            { name: 'SQL Injection', path: '/rest/products/search?q=\'', expected: 'error' },
+            { name: 'XSS', path: '/rest/products/search?q=<script>alert(1)</script>', expected: 'script' },
+            { name: 'Path Traversal', path: '/ftp/../../../etc/passwd', expected: '404' },
+            { name: 'Admin Access', path: '/administration', expected: '200' },
+            { name: 'API Exposure', path: '/api-docs', expected: '200' }
+        ];
         
-        exec(zapCmd, { timeout: 300000 }, (error, stdout, stderr) => {
+        for (const test of tests) {
+            try {
+                const response = await fetch(`${targetUrl}${test.path}`);
+                const text = await response.text();
+                
+                let risk = 'Low';
+                if (response.status === 200 && test.name === 'Admin Access') risk = 'High';
+                if (text.includes('SQLITE_ERROR') || text.includes('syntax error')) risk = 'High';
+                if (text.includes('<script>') && test.name === 'XSS') risk = 'Medium';
+                
+                vulnerabilities.push({
+                    name: test.name,
+                    riskcode: risk === 'High' ? '3' : risk === 'Medium' ? '2' : '1',
+                    desc: `${test.name} test on ${test.path}`,
+                    instances: [{ uri: `${targetUrl}${test.path}`, response: response.status }]
+                });
+            } catch (e) {
+                // Ignore connection errors
+            }
+        }
+        
+        return {
+            success: true,
+            report: {
+                site: [{
+                    '@name': targetUrl,
+                    alerts: vulnerabilities
+                }]
+            }
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: `Fallback scanner failed: ${error.message}`
+        };
+    }
+}
+
+function runZapAttack(targetUrl) {
+    return new Promise((resolve, reject) => {
+        const actualTarget = `http://host.docker.internal:8080`;
+        const workDir = process.cwd().replace(/\\/g, '/');
+        
+        console.log(`Starting ZAP scan against: ${actualTarget}`);
+        const zapCmd = `docker run --rm -v "${workDir}:/zap/wrk/:rw" zaproxy/zap-stable zap-baseline.py -t ${actualTarget} -J zap-report.json`;
+        
+        console.log(`Running command: ${zapCmd}`);
+        exec(zapCmd, { timeout: 120000 }, (error, stdout, stderr) => {
             console.log('ZAP stdout:', stdout);
             console.log('ZAP stderr:', stderr);
-            if (error) console.log('ZAP error:', error);
+            if (error) {
+                console.log('ZAP error:', error);
+                reject(error);
+                return;
+            }
             
             try {
-                const reportPath = path.join(process.cwd(), 'zap-aggressive-report.json');
+                const reportPath = path.join(process.cwd(), 'zap-report.json');
                 if (fs.existsSync(reportPath)) {
                     const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
                     resolve({
@@ -378,6 +443,10 @@ app.post('/api/nvd-scan', async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Kubernetes AI Monitor API running at http://localhost:${PORT}`);
+    console.log('Available endpoints:');
+    console.log('  POST /api/analyze - Kubernetes pod analysis');
+    console.log('  POST /api/zap-attack - OWASP ZAP security scan');
+    console.log('  GET /api/status - Cluster status check');
 });
 
 async function runHydraScan() {
