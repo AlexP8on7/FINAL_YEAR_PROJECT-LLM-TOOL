@@ -11,12 +11,15 @@ function App() {
   const [hydraLoading, setHydraLoading] = useState(false);
   const [nvdLoading, setNvdLoading] = useState(false);
   const [codeLoading, setCodeLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [statusResult, setStatusResult] = useState(null);
   const [zapResult, setZapResult] = useState(null);
   const [hydraResult, setHydraResult] = useState(null);
   const [nvdResult, setNvdResult] = useState(null);
   const [codeResult, setCodeResult] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
   const [error, setError] = useState(null);
   const [statusExpanded, setStatusExpanded] = useState(false);
   const [analysisExpanded, setAnalysisExpanded] = useState(false);
@@ -24,6 +27,7 @@ function App() {
   const [hydraExpanded, setHydraExpanded] = useState(false);
   const [nvdExpanded, setNvdExpanded] = useState(false);
   const [codeExpanded, setCodeExpanded] = useState(false);
+  const [chatExpanded, setChatExpanded] = useState(false);
 
   const checkStatus = async () => {
     setStatusLoading(true);
@@ -114,92 +118,46 @@ function App() {
     }
   };
 
+  const sendChatMessage = async () => {
+    if (!chatInput.trim()) return;
+    
+    const userMessage = chatInput.trim();
+    setChatInput('');
+    setChatMessages(prev => [...prev, { type: 'user', message: userMessage }]);
+    setChatLoading(true);
+    
+    try {
+      const response = await axios.post('/api/chat', { message: userMessage });
+      setChatMessages(prev => [...prev, { type: 'ai', message: response.data.response }]);
+    } catch (err) {
+      setChatMessages(prev => [...prev, { type: 'error', message: 'Failed to get AI response: ' + err.message }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   return (
     <div className="App">
-      {/* Hero Section */}
       <div className="hero-section">
         <div className="container">
           <div className="row">
             <div className="col-12 text-center">
-              <h1 className="display-4 mb-4">
-                 Kubernetes AI Monitor
-              </h1>
-              <p className="lead">
-                AI-powered analysis of your Kubernetes cluster health and performance
-              </p>
+              <h1 className="display-4 mb-4">Kubernetes AI Monitor</h1>
+              <p className="lead">AI-powered analysis of your Kubernetes cluster health and performance</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="container">
-        {/* Action Cards */}
         <div className="row mb-5">
           <div className="col-md-3 mb-4">
             <div className="card status-card h-100 shadow-sm">
               <div className="card-body text-center">
                 <div className="feature-icon"></div>
-                <h5 className="card-title">Quick Status Check</h5>
-                <p className="card-text">
-                  Verify your Kubernetes cluster connection and pod status
-                </p>
-                <button 
-                  className="btn-check-status"
-                  onClick={checkStatus}
-                  disabled={statusLoading}
-                >
-                  {statusLoading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" />
-                      Checking...
-                    </>
-                  ) : (
-                    'Check Status'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-md-3 mb-4">
-            <div className="card status-card h-100 shadow-sm">
-              <div className="card-body text-center">
-                <div className="feature-icon"></div>
-                <h5 className="card-title">AI Analysis</h5>
-                <p className="card-text">
-                  Get comprehensive AI-powered insights about your cluster
-                </p>
-                <button 
-                  className="btn-Ai-analysis"
-                  onClick={runAnalysis}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    'Run AI Analysis'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-md-3 mb-4">
-            <div className="card status-card h-100 shadow-sm">
-              <div className="card-body text-center">
-                <div className="feature-icon"></div>
                 <h5 className="card-title">ZAP Security Test</h5>
-                <p className="card-text">
-                  Run OWASP ZAP security scan against your Juice Shop
-                </p>
-                <button 
-                  className="btn-simulate-attack"
-                  onClick={simulateAttack}
-                  disabled={zapLoading}
-                >
+                <p className="card-text">Run OWASP ZAP security scan against your Juice Shop</p>
+                <button className="btn-simulate-attack" onClick={simulateAttack} disabled={zapLoading}>
                   {zapLoading ? (
                     <>
                       <span className="spinner-border spinner-border-sm me-2" />
@@ -218,14 +176,8 @@ function App() {
               <div className="card-body text-center">
                 <div className="feature-icon"></div>
                 <h5 className="card-title">Hydra Brute-Force</h5>
-                <p className="card-text">
-                  Test authentication security with password brute-forcing
-                </p>
-                <button 
-                  className="btn-hydra"
-                  onClick={runHydraScan}
-                  disabled={hydraLoading}
-                >
+                <p className="card-text">Test authentication security with password brute-forcing</p>
+                <button className="btn-hydra" onClick={runHydraScan} disabled={hydraLoading}>
                   {hydraLoading ? (
                     <>
                       <span className="spinner-border spinner-border-sm me-2" />
@@ -244,14 +196,8 @@ function App() {
               <div className="card-body text-center">
                 <div className="feature-icon"></div>
                 <h5 className="card-title">NVD CVE Scan</h5>
-                <p className="card-text">
-                  Check juice-shop CVEs from NVD database
-                </p>
-                <button 
-                  className="btn-nvd"
-                  onClick={runNvdScan}
-                  disabled={nvdLoading}
-                >
+                <p className="card-text">Check juice-shop CVEs from NVD database</p>
+                <button className="btn-nvd" onClick={runNvdScan} disabled={nvdLoading}>
                   {nvdLoading ? (
                     <>
                       <span className="spinner-border spinner-border-sm me-2" />
@@ -270,14 +216,8 @@ function App() {
               <div className="card-body text-center">
                 <div className="feature-icon"></div>
                 <h5 className="card-title">Source Code Scan</h5>
-                <p className="card-text">
-                  Extract and analyze juice-shop source code for vulnerabilities
-                </p>
-                <button 
-                  className="btn-code"
-                  onClick={runCodeScan}
-                  disabled={codeLoading}
-                >
+                <p className="card-text">Extract and analyze juice-shop source code for vulnerabilities</p>
+                <button className="btn-code" onClick={runCodeScan} disabled={codeLoading}>
                   {codeLoading ? (
                     <>
                       <span className="spinner-border spinner-border-sm me-2" />
@@ -292,74 +232,133 @@ function App() {
           </div>
         </div>
 
-        {/* Error Display */}
         {error && (
           <div className="alert alert-danger" role="alert">
             <strong>Error:</strong> {error}
           </div>
         )}
 
-        {/* Status Result */}
-        {statusResult && (
-          <div className="card mb-4">
-            <div className="card-header" onClick={() => setStatusExpanded(!statusExpanded)} style={{cursor: 'pointer'}}>
-              <h5 className="mb-0 d-flex justify-content-between align-items-center">
-                 Cluster Status
-                <span>{statusExpanded ? '▼' : '▶'}</span>
-              </h5>
+        <div className="card mb-4">
+          <div className="card-body">
+            <h5 className="card-title">Chat with AI</h5>
+            <div className="mb-3">
+              <div className="btn-group" role="group">
+                <button className="btn btn-outline-primary btn-sm" onClick={checkStatus} disabled={statusLoading}>
+                  {statusLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1" />
+                      Checking...
+                    </>
+                  ) : (
+                    'Status Check'
+                  )}
+                </button>
+                <button className="btn btn-outline-success btn-sm" onClick={runAnalysis} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    'AI Analysis'
+                  )}
+                </button>
+              </div>
             </div>
-            {statusExpanded && (
-              <div className="card-body">
-                {statusResult.error ? (
-                  <div className="alert alert-danger">
-                    Connection failed: {statusResult.error}
-                  </div>
+            <div className="input-group">
+              <input 
+                type="text" 
+                className="form-control" 
+                placeholder="Ask me about Kubernetes, security, or anything else..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                disabled={chatLoading}
+              />
+              <button className="btn btn-primary" onClick={sendChatMessage} disabled={chatLoading || !chatInput.trim()}>
+                {chatLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" />
+                    Sending...
+                  </>
                 ) : (
-                  <div className="alert alert-success">
-                    <strong> Connected to cluster!</strong><br />
-                    {(() => {
-                      const pods = statusResult.status ? 
-                        statusResult.status.split('\n')
-                          .filter(line => line.trim() && !line.startsWith('NAME'))
-                          .map(line => line.split(/\s+/)[0]) : [];
-                      return (
-                        <>
-                          Found {pods.length} pod{pods.length !== 1 ? 's' : ''}:
-                          <ul className="mb-0 mt-2">
-                            {pods.map((podName, index) => (
-                              <li key={index}><code>{podName}</code></li>
-                            ))}
-                          </ul>
-                        </>
-                      );
-                    })()} 
+                  'Send'
+                )}
+              </button>
+            </div>
+            
+            {chatMessages.length > 0 && (
+              <div className="mt-3">
+                <div className="d-flex justify-content-between align-items-center p-2 bg-light rounded" onClick={() => setChatExpanded(!chatExpanded)} style={{cursor: 'pointer'}}>
+                  <span>AI Chat ({chatMessages.length} messages)</span>
+                  <span>{chatExpanded ? '▼' : '▶'}</span>
+                </div>
+                {chatExpanded && (
+                  <div className="border rounded mt-2 p-3" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {chatMessages.map((msg, index) => (
+                      <div key={index} className={`mb-2 ${msg.type === 'user' ? 'text-end' : 'text-start'}`}>
+                        <div className={`d-inline-block p-2 rounded ${msg.type === 'user' ? 'bg-primary text-white' : msg.type === 'error' ? 'bg-danger text-white' : 'bg-light'}`} style={{ maxWidth: '80%' }}>
+                          <strong>{msg.type === 'user' ? 'You' : msg.type === 'error' ? 'Error' : 'AI'}:</strong> {msg.message}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {statusResult && (
+              <div className="mt-3">
+                <div className="d-flex justify-content-between align-items-center p-2 bg-light rounded" onClick={() => setStatusExpanded(!statusExpanded)} style={{cursor: 'pointer'}}>
+                  <span>Cluster Status</span>
+                  <span>{statusExpanded ? '▼' : '▶'}</span>
+                </div>
+                {statusExpanded && (
+                  <div className="border rounded mt-2 p-3">
+                    {statusResult.error ? (
+                      <div className="alert alert-danger">Connection failed: {statusResult.error}</div>
+                    ) : (
+                      <div className="alert alert-success">
+                        <strong>Connected to cluster!</strong><br />
+                        {(() => {
+                          const pods = statusResult.status ? 
+                            statusResult.status.split('\n').filter(line => line.trim() && !line.startsWith('NAME')).map(line => line.split(/\s+/)[0]) : [];
+                          return (
+                            <>
+                              Found {pods.length} pod{pods.length !== 1 ? 's' : ''}:
+                              <ul className="mb-0 mt-2">
+                                {pods.map((podName, index) => (
+                                  <li key={index}><code>{podName}</code></li>
+                                ))}
+                              </ul>
+                            </>
+                          );
+                        })()} 
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {analysisResult && (
+              <div className="mt-3">
+                <div className="d-flex justify-content-between align-items-center p-2 bg-light rounded" onClick={() => setAnalysisExpanded(!analysisExpanded)} style={{cursor: 'pointer'}}>
+                  <span>AI Analysis Results</span>
+                  <span>{analysisExpanded ? '▼' : '▶'}</span>
+                </div>
+                {analysisExpanded && (
+                  <div className="border rounded mt-2 p-3" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    <div className="analysis-content">
+                      <ReactMarkdown>{analysisResult.analysis}</ReactMarkdown>
+                    </div>
                   </div>
                 )}
               </div>
             )}
           </div>
-        )}
+        </div>
 
-        {/* Analysis Results */}
-        {analysisResult && (
-          <div className="card mb-4">
-            <div className="card-header" onClick={() => setAnalysisExpanded(!analysisExpanded)} style={{cursor: 'pointer'}}>
-              <h5 className="mb-0 d-flex justify-content-between align-items-center">
-                 AI Analysis Results
-                <span>{analysisExpanded ? '▼' : '▶'}</span>
-              </h5>
-            </div>
-            {analysisExpanded && (
-              <div className="card-body">
-                <div className="analysis-content">
-                  <ReactMarkdown>{analysisResult.analysis}</ReactMarkdown>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ZAP Attack Results */}
         {zapResult && (
           <div className="card mb-4">
             <div className="card-header" onClick={() => setZapExpanded(!zapExpanded)} style={{cursor: 'pointer'}}>
@@ -378,12 +377,11 @@ function App() {
           </div>
         )}
 
-        {/* Hydra Results */}
         {hydraResult && (
           <div className="card mb-4">
             <div className="card-header" onClick={() => setHydraExpanded(!hydraExpanded)} style={{cursor: 'pointer'}}>
               <h5 className="mb-0 d-flex justify-content-between align-items-center">
-               Hydra Brute-Force Results
+                Hydra Brute-Force Results
                 <span>{hydraExpanded ? '▼' : '▶'}</span>
               </h5>
             </div>
@@ -397,7 +395,6 @@ function App() {
           </div>
         )}
 
-        {/* NVD Results */}
         {nvdResult && (
           <div className="card mb-4">
             <div className="card-header" onClick={() => setNvdExpanded(!nvdExpanded)} style={{cursor: 'pointer'}}>
@@ -416,7 +413,6 @@ function App() {
           </div>
         )}
 
-        {/* Code Scan Results */}
         {codeResult && (
           <div className="card mb-4">
             <div className="card-header" onClick={() => setCodeExpanded(!codeExpanded)} style={{cursor: 'pointer'}}>
@@ -435,7 +431,6 @@ function App() {
           </div>
         )}
 
-        {/* Loading State */}
         {(loading || zapLoading || hydraLoading || nvdLoading || codeLoading) && (
           <div className="loading-spinner">
             <div className="text-center">

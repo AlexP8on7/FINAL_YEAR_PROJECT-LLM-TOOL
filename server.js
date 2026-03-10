@@ -195,21 +195,17 @@ ${low.slice(0, 5).map(formatAlert).join('\n') || 'None'}`;
 
 app.post('/api/zap-attack', async (req, res) => {
     try {
+        console.log('ZAP attack endpoint called');
         const targetUrl = 'http://localhost:8080';
         
-        // Try ZAP first, fallback to simple scanner if Docker fails
-        let zapResults;
-        try {
-            zapResults = await runZapAttack(targetUrl);
-        } catch (dockerError) {
-            console.log('Docker/ZAP failed, using fallback scanner:', dockerError.message);
-            zapResults = await runFallbackScanner(targetUrl);
-        }
+        const zapResults = await runZapAttack(targetUrl);
+        console.log('ZAP results received:', zapResults);
         
         if (!zapResults.success) {
-            return res.status(500).json({
+            console.log('ZAP scan failed, returning error response');
+            return res.json({
                 success: false,
-                error: `Security scan failed: ${zapResults.error}`,
+                error: zapResults.error,
                 stdout: zapResults.stdout,
                 stderr: zapResults.stderr
             });
@@ -224,9 +220,9 @@ app.post('/api/zap-attack', async (req, res) => {
             fs.mkdirSync(reportsDir);
         }
         
-        const reportContent = `# Security Analysis\n\n**Target:** ${targetUrl}\n**Generated:** ${new Date().toLocaleString()}\n\n## AI Security Analysis\n\n${aiAnalysis}\n\n## Raw Results\n\n\`\`\`json\n${JSON.stringify(zapResults.report, null, 2)}\n\`\`\``;
+        const reportContent = `# OWASP ZAP Security Analysis\n\n**Target:** ${targetUrl}\n**Generated:** ${new Date().toLocaleString()}\n\n## AI Security Analysis\n\n${aiAnalysis}\n\n## Raw ZAP Results\n\n\`\`\`json\n${JSON.stringify(zapResults.report, null, 2)}\n\`\`\``;
         
-        const filename = `${reportsDir}/security-analysis_${timestamp}.md`;
+        const filename = `${reportsDir}/zap-analysis_${timestamp}.md`;
         fs.writeFileSync(filename, reportContent);
         
         res.json({
@@ -238,80 +234,38 @@ app.post('/api/zap-attack', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Security Scan Error:', error);
-        res.status(500).json({
+        console.error('ZAP Attack Error:', error);
+        res.json({
             success: false,
             error: error.message
         });
     }
 });
 
-async function runFallbackScanner(targetUrl) {
-    const vulnerabilities = [];
-    
-    try {
-        // Test common vulnerabilities
-        const tests = [
-            { name: 'SQL Injection', path: '/rest/products/search?q=\'', expected: 'error' },
-            { name: 'XSS', path: '/rest/products/search?q=<script>alert(1)</script>', expected: 'script' },
-            { name: 'Path Traversal', path: '/ftp/../../../etc/passwd', expected: '404' },
-            { name: 'Admin Access', path: '/administration', expected: '200' },
-            { name: 'API Exposure', path: '/api-docs', expected: '200' }
-        ];
-        
-        for (const test of tests) {
-            try {
-                const response = await fetch(`${targetUrl}${test.path}`);
-                const text = await response.text();
-                
-                let risk = 'Low';
-                if (response.status === 200 && test.name === 'Admin Access') risk = 'High';
-                if (text.includes('SQLITE_ERROR') || text.includes('syntax error')) risk = 'High';
-                if (text.includes('<script>') && test.name === 'XSS') risk = 'Medium';
-                
-                vulnerabilities.push({
-                    name: test.name,
-                    riskcode: risk === 'High' ? '3' : risk === 'Medium' ? '2' : '1',
-                    desc: `${test.name} test on ${test.path}`,
-                    instances: [{ uri: `${targetUrl}${test.path}`, response: response.status }]
-                });
-            } catch (e) {
-                // Ignore connection errors
-            }
-        }
-        
-        return {
-            success: true,
-            report: {
-                site: [{
-                    '@name': targetUrl,
-                    alerts: vulnerabilities
-                }]
-            }
-        };
-    } catch (error) {
-        return {
-            success: false,
-            error: `Fallback scanner failed: ${error.message}`
-        };
-    }
-}
-
 function runZapAttack(targetUrl) {
     return new Promise((resolve, reject) => {
         const actualTarget = `http://host.docker.internal:8080`;
-        const workDir = process.cwd().replace(/\\/g, '/');
+        const workDir = process.cwd();
         
-        console.log(`Starting ZAP scan against: ${actualTarget}`);
-        const zapCmd = `docker run --rm -v "${workDir}:/zap/wrk/:rw" zaproxy/zap-stable zap-baseline.py -t ${actualTarget} -J zap-report.json`;
+        console.log(`Starting ZAP ACTIVE scan against: ${actualTarget}`);
+        // Use zap-full-scan.py for active scanning to find real vulnerabilities
+        // -j for AJAX spider to crawl the SPA properly
+        const zapCmd = `docker run --rm -v "${workDir}:/zap/wrk/:rw" zaproxy/zap-stable zap-full-scan.py -t ${actualTarget} -J zap-report.json -j`;
         
         console.log(`Running command: ${zapCmd}`);
-        exec(zapCmd, { timeout: 120000 }, (error, stdout, stderr) => {
+        exec(zapCmd, { timeout: 300000 }, (error, stdout, stderr) => {
             console.log('ZAP stdout:', stdout);
             console.log('ZAP stderr:', stderr);
-            if (error) {
+            
+            // ZAP returns exit code 2 when it finds issues, which is normal
+            if (error && error.code !== 2) {
                 console.log('ZAP error:', error);
-                reject(error);
+                resolve({
+                    success: false,
+                    error: `Docker command failed: ${error.message}. Make sure Docker Desktop is running and Juice Shop is accessible at localhost:8080`,
+                    stdout: stdout,
+                    stderr: stderr
+                });
                 return;
             }
             
@@ -328,7 +282,7 @@ function runZapAttack(targetUrl) {
                 } else {
                     resolve({
                         success: false,
-                        error: 'ZAP report not generated',
+                        error: 'ZAP report not generated - check if target is accessible',
                         stdout: stdout,
                         stderr: stderr
                     });
@@ -441,11 +395,72 @@ app.post('/api/nvd-scan', async (req, res) => {
     }
 });
 
+app.post('/api/chat', async (req, res) => {
+    try {
+        console.log('Chat request received:', req.body);
+        const { message } = req.body;
+        
+        if (!message) {
+            console.log('No message provided');
+            return res.status(400).json({ error: 'Message is required' });
+        }
+        
+        const token = process.env.GITHUB_TOKEN;
+        if (!token) {
+            console.log('GITHUB_TOKEN not set');
+            return res.status(500).json({ error: 'GITHUB_TOKEN not set' });
+        }
+        
+        console.log('Fetching cluster context...');
+        
+        // Get current cluster information
+        const clusterInfo = await getKubectlInfo();
+        const clusterContext = `
+CURRENT CLUSTER STATE:
+Pods: ${clusterInfo.status}
+Recent Logs: ${clusterInfo.logs.substring(0, 500)}
+Errors: ${clusterInfo.errors || 'None'}`;
+        
+        console.log('Sending to AI with cluster context');
+        
+        const client = new OpenAI({
+            baseURL: 'https://models.github.ai/inference',
+            apiKey: token,
+        });
+        
+        const response = await client.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    content: `You are a Kubernetes expert assistant with access to the user's live cluster data. Use the cluster information to provide specific, actionable advice about their actual pods and services. Reference specific pod names, statuses, and logs when relevant.${clusterContext}`
+                },
+                {
+                    role: "user",
+                    content: message
+                }
+            ],
+            temperature: 0.7,
+            max_tokens: 1000,
+            model: "gpt-4o"
+        });
+        
+        console.log('AI response received');
+        res.json({
+            success: true,
+            response: response.choices[0].message.content
+        });
+    } catch (error) {
+        console.error('Chat error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Kubernetes AI Monitor API running at http://localhost:${PORT}`);
     console.log('Available endpoints:');
     console.log('  POST /api/analyze - Kubernetes pod analysis');
     console.log('  POST /api/zap-attack - OWASP ZAP security scan');
+    console.log('  POST /api/chat - AI Chat');
     console.log('  GET /api/status - Cluster status check');
 });
 

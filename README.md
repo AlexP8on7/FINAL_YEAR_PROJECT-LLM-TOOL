@@ -18,6 +18,7 @@ python3 -m venv venv # At home
 python -m venv venv # College Pc
 
 # Activate virtual environment
+python3 -m venv venv 
 source venv/Scripts/activate
 
 # Install required packages
@@ -105,3 +106,5 @@ To monitor different applications, modify the kubectl commands in `get_kubectl_i
 # Change 'app=juice-shop' to your app label
 pod_status = subprocess.run(['kubectl', 'get', 'pods', '-l', 'app=your-app'], ...)
 ```
+
+
