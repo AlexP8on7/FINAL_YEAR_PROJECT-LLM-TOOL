@@ -14,13 +14,12 @@ AI-powered Kubernetes cluster monitoring tool that analyzes your pod health stat
 
 ```bash
 # Create virtual environment
-python3 -m venv venv
+python3 -m venv venv # At home
+python -m venv venv # College Pc
 
 # Activate virtual environment
-# On Linux/WSL:
-source venv/bin/activate
-# On Windows:
-venv\Scripts\activate
+python3 -m venv venv 
+source venv/Scripts/activate
 
 # Install required packages
 pip install openai requests
@@ -39,11 +38,6 @@ pip install openai requests
 # Linux/WSL/Mac:
 export GITHUB_TOKEN=your_github_token_here
 
-# Windows CMD:
-set GITHUB_TOKEN=your_github_token_here
-
-# Windows PowerShell:
-$env:GITHUB_TOKEN="your_github_token_here"
 ```
 
 ### 4. Configure kubectl
@@ -57,7 +51,16 @@ kubectl get pods
 # Verify juice-shop pods exist
 kubectl get pods -l app=juice-shop
 ```
+## Set up GUI 
+``` bash
+# ./frontend
+npm start
+#./FINAL_YEAR_PROJECT-LLM-TOOL 
+npm start
+#Port forwad Juice-shop
+kubectl port-forward svc/juice-shop 8080:3000
 
+```
 ## Usage
 
 Run the monitoring tool:
@@ -104,13 +107,4 @@ To monitor different applications, modify the kubectl commands in `get_kubectl_i
 pod_status = subprocess.run(['kubectl', 'get', 'pods', '-l', 'app=your-app'], ...)
 ```
 
-## File Structure
 
-```
-FINAL_YEAR_PROJECT-LLM-TOOL/
-├── main.py              # Main monitoring script
-├── README.md           # This file
-├── Reports/            # Generated analysis reports
-│   └── juice-shop-analysis_*.md
-└── venv/              # Python virtual environment
-```

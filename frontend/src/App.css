@@ -35,7 +35,7 @@
 .btn-check-status {
     background: #4e54c8;  /* fallback for old browsers */
     background: -webkit-linear-gradient(to right, #f1f1f1, #3d0311);  /* Chrome 10-25, Safari 5.1-6 */
-    background: linear-gradient(to right, #0e1a5e, #1a37db); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+    background: linear-gradient(to right, #0e1a5e, #1a37db); 
     color: #fff;
     border: 2px solid #eee;
     padding: 12px 24px;
@@ -46,10 +46,83 @@
 .btn-Ai-analysis {
     background: #4e54c8;  /* fallback for old browsers */
     background: -webkit-linear-gradient(to right, #f1f1f1, #3d0311);  /* Chrome 10-25, Safari 5.1-6 */
-    background: linear-gradient(to right, #09270d, #04940b); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+    background: linear-gradient(to right, #09270d, #04940b);
     color: #fff;
     border: 2px solid #eee;
     padding: 12px 24px;
     font-size: 1.2rem;
     min-width: 180px;
+}
+
+.btn-simulate-attack {
+    background: linear-gradient(to right, #640606, #DC143C); /* Dark red to crimson gradient */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+.btn-hydra {
+    background: linear-gradient(to right, #684107, #d87b02); /*Dark Yellow to Gold */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+.btn-nvd {
+    background: linear-gradient(to right, #360e24, #d80298); /*Dark Yellow to Gold */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+.btn-code {
+    background: linear-gradient(to right, #1a0e36, #6b02d8); /* Dark purple to violet */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+.btn-grafana {
+    background: linear-gradient(to right, #0e3a1a, #02a86b); /* Dark green to teal */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.custom-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
 }
