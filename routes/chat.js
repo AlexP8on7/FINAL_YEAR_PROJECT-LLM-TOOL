@@ -11,13 +11,14 @@ router.post('/', async (req, res) => {
         const clusterInfo = await getKubectlInfo();
 
         const scanContext = [
-            store.codeScan   && `## Latest Source Code Scan\n${store.codeScan}`,
-            store.zapScan    && `## Latest ZAP Scan\n${store.zapScan}`,
-            store.hydraScan  && `## Latest Hydra Scan\n${store.hydraScan}`,
-            store.nvdScan    && `## Latest NVD CVE Scan\n${store.nvdScan}`,
+            store.codeScan   && `Latest Source Code Scan:\n${store.codeScan}`,
+            store.zapScan    && `Latest ZAP Scan:\n${store.zapScan}`,
+            store.hydraScan  && `Latest Hydra Scan:\n${store.hydraScan}`,
+            store.nvdScan    && `Latest NVD CVE Scan:\n${store.nvdScan}`,
         ].filter(Boolean).join('\n\n');
 
         const systemPrompt = `You are a Kubernetes and security expert assistant with access to the user's live cluster data and latest scan results.
+Respond conversationally and concisely. Do not use markdown headers, horizontal rules, or excessive bold text. Use plain sentences and short bullet points only when listing multiple items.
 
 CURRENT CLUSTER STATE:
 Pods: ${clusterInfo.status}
