@@ -166,6 +166,7 @@ function App() {
     const userMessage = chatInput.trim();
     setChatInput('');
     setChatMessages(prev => [...prev, { type: 'user', message: userMessage }]);
+    setChatExpanded(true);
     setChatLoading(true);
     
     try {
