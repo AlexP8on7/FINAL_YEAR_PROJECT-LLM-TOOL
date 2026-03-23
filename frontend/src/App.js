@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import AdvancedSpinner from './AdvancedSpinner';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './App.css';
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
   const [hydraLoading, setHydraLoading] = useState(false);
   const [nvdLoading, setNvdLoading] = useState(false);
   const [codeLoading, setCodeLoading] = useState(false);
+  const [grafanaLoading, setGrafanaLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [statusResult, setStatusResult] = useState(null);
@@ -18,6 +20,8 @@ function App() {
   const [hydraResult, setHydraResult] = useState(null);
   const [nvdResult, setNvdResult] = useState(null);
   const [codeResult, setCodeResult] = useState(null);
+  const [metricsData, setMetricsData] = useState(null);
+  const [metricsExpanded, setMetricsExpanded] = useState(true);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [error, setError] = useState(null);
@@ -100,6 +104,44 @@ function App() {
       setError('Failed to run NVD scan: ' + err.message);
     } finally {
       setNvdLoading(false);
+    }
+  };
+
+  const openGrafana = async () => {
+    setGrafanaLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('/api/metrics');
+      if (response.data.success) {
+        const buildChartData = (result, transform) => {
+          const seriesMap = {};
+          result.forEach((r, i) => {
+            const label = r.metric.container || r.metric.pod || `series${i}`;
+            r.values.forEach(([ts, val]) => {
+              const time = new Date(ts * 1000).toLocaleTimeString();
+              if (!seriesMap[time]) seriesMap[time] = { time };
+              seriesMap[time][label] = transform(val);
+            });
+          });
+          return {
+            data: Object.values(seriesMap),
+            keys: result.map((r, i) => r.metric.container || r.metric.pod || `series${i}`)
+          };
+        };
+        const cpu = buildChartData(response.data.cpu, v => parseFloat((parseFloat(v) * 100).toFixed(4)));
+        const memory = buildChartData(response.data.memory, v => parseFloat((parseFloat(v) / 1024 / 1024).toFixed(2)));
+        setMetricsData({
+          cpu,
+          memory,
+          restarts: response.data.restarts?.[0]?.values?.slice(-1)?.[0]?.[1] || 0,
+          status: response.data.status?.[0]?.values?.slice(-1)?.[0]?.[1] || 0
+        });
+        setMetricsExpanded(true);
+      }
+    } catch (err) {
+      setError('Failed to fetch metrics: ' + err.message);
+    } finally {
+      setGrafanaLoading(false);
     }
   };
 
@@ -225,6 +267,26 @@ function App() {
                     </>
                   ) : (
                     'Code Scan'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-3 mb-4">
+            <div className="card status-card h-100 shadow-sm">
+              <div className="card-body text-center">
+                <div className="feature-icon"></div>
+                <h5 className="card-title">Grafana Metrics</h5>
+                <p className="card-text">View live Prometheus metrics for your juice-shop pod in Grafana</p>
+                <button className="btn-grafana" onClick={openGrafana} disabled={grafanaLoading}>
+                  {grafanaLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    'View Metrics'
                   )}
                 </button>
               </div>
@@ -426,6 +488,61 @@ function App() {
                 <div className="analysis-content">
                   <ReactMarkdown>{codeResult.analysis}</ReactMarkdown>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {metricsData && (
+          <div className="card mb-4">
+            <div className="card-header" onClick={() => setMetricsExpanded(!metricsExpanded)} style={{cursor: 'pointer'}}>
+              <h5 className="mb-0 d-flex justify-content-between align-items-center">
+                Juice Shop Pod Metrics
+                <span>{metricsExpanded ? '▼' : '▶'}</span>
+              </h5>
+            </div>
+            {metricsExpanded && (
+              <div className="card-body">
+                <div className="row mb-4">
+                  <div className="col-md-3 text-center">
+                    <div className={`p-3 rounded ${metricsData.status == 1 ? 'bg-success text-white' : 'bg-danger text-white'}`}>
+                      <strong>Pod Status</strong><br />
+                      {metricsData.status == 1 ? 'RUNNING' : 'DOWN'}
+                    </div>
+                  </div>
+                  <div className="col-md-3 text-center">
+                    <div className="p-3 rounded bg-light">
+                      <strong>Restarts</strong><br />
+                      {metricsData.restarts}
+                    </div>
+                  </div>
+                </div>
+                <h6>CPU Usage (%)</h6>
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={metricsData.cpu.data} margin={{top: 5, right: 20, left: 10, bottom: 5}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                    <XAxis dataKey="time" tick={{fontSize: 10}} interval={10} />
+                    <YAxis tickFormatter={v => `${v}%`} domain={[0, 'auto']} tick={{fontSize: 10}} />
+                    <Tooltip formatter={(v, name) => [`${v}%`, name]} />
+                    <Legend />
+                    {metricsData.cpu.keys.map((key, i) => (
+                      <Line key={key} type="monotone" dataKey={key} stroke={['#3a1fc1','#1a7a3a','#b85c00','#a00000'][i % 4]} dot={false} strokeWidth={2} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+                <h6 className="mt-4">Memory Usage (MiB)</h6>
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={metricsData.memory.data} margin={{top: 5, right: 20, left: 10, bottom: 5}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                    <XAxis dataKey="time" tick={{fontSize: 10}} interval={10} />
+                    <YAxis tickFormatter={v => `${v} MiB`} domain={[0, 'auto']} tick={{fontSize: 10}} />
+                    <Tooltip formatter={(v, name) => [`${v} MiB`, name]} />
+                    <Legend />
+                    {metricsData.memory.keys.map((key, i) => (
+                      <Line key={key} type="monotone" dataKey={key} stroke={['#1a7a3a','#3a1fc1','#b85c00','#a00000'][i % 4]} dot={false} strokeWidth={2} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>

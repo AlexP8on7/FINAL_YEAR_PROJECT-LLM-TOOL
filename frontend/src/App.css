@@ -94,6 +94,16 @@
     transition: all 0.3s ease;
 }
 
+.btn-grafana {
+    background: linear-gradient(to right, #0e3a1a, #02a86b); /* Dark green to teal */
+    color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
 .spinner {
   width: 40px;
   height: 40px;
