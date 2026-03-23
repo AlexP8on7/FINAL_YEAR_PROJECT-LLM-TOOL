@@ -273,25 +273,6 @@ function App() {
             </div>
           </div>
 
-          <div className="col-md-3 mb-4">
-            <div className="card status-card h-100 shadow-sm">
-              <div className="card-body text-center">
-                <div className="feature-icon"></div>
-                <h5 className="card-title">Grafana Metrics</h5>
-                <p className="card-text">View live Prometheus metrics for your juice-shop pod in Grafana</p>
-                <button className="btn-grafana" onClick={openGrafana} disabled={grafanaLoading}>
-                  {grafanaLoading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" />
-                      Loading...
-                    </>
-                  ) : (
-                    'View Metrics'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
         {error && (
@@ -323,6 +304,16 @@ function App() {
                     </>
                   ) : (
                     'AI Analysis'
+                  )}
+                </button>
+                <button className="btn btn-outline-info btn-sm" onClick={openGrafana} disabled={grafanaLoading}>
+                  {grafanaLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1" />
+                      Loading...
+                    </>
+                  ) : (
+                    'View Metrics'
                   )}
                 </button>
               </div>
@@ -418,6 +409,59 @@ function App() {
                 )}
               </div>
             )}
+
+            {metricsData && (
+              <div className="mt-3">
+                <div className="d-flex justify-content-between align-items-center p-2 bg-light rounded" onClick={() => setMetricsExpanded(!metricsExpanded)} style={{cursor: 'pointer'}}>
+                  <span>Juice Shop Pod Metrics</span>
+                  <span>{metricsExpanded ? '▼' : '▶'}</span>
+                </div>
+                {metricsExpanded && (
+                  <div className="border rounded mt-2 p-3">
+                    <div className="row mb-4">
+                      <div className="col-md-3 text-center">
+                        <div className={`p-3 rounded ${metricsData.status == 1 ? 'bg-success text-white' : 'bg-danger text-white'}`}>
+                          <strong>Pod Status</strong><br />
+                          {metricsData.status == 1 ? 'RUNNING' : 'DOWN'}
+                        </div>
+                      </div>
+                      <div className="col-md-3 text-center">
+                        <div className="p-3 rounded bg-light">
+                          <strong>Restarts</strong><br />
+                          {metricsData.restarts}
+                        </div>
+                      </div>
+                    </div>
+                    <h6>CPU Usage (%)</h6>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <LineChart data={metricsData.cpu.data} margin={{top: 5, right: 20, left: 10, bottom: 5}}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                        <XAxis dataKey="time" tick={{fontSize: 10}} interval={10} />
+                        <YAxis tickFormatter={v => `${v}%`} domain={[0, 'auto']} tick={{fontSize: 10}} />
+                        <Tooltip formatter={(v, name) => [`${v}%`, name]} />
+                        <Legend />
+                        {metricsData.cpu.keys.map((key, i) => (
+                          <Line key={key} type="monotone" dataKey={key} stroke={['#3a1fc1','#1a7a3a','#b85c00','#a00000'][i % 4]} dot={false} strokeWidth={2} />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                    <h6 className="mt-4">Memory Usage (MiB)</h6>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <LineChart data={metricsData.memory.data} margin={{top: 5, right: 20, left: 10, bottom: 5}}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                        <XAxis dataKey="time" tick={{fontSize: 10}} interval={10} />
+                        <YAxis tickFormatter={v => `${v} MiB`} domain={[0, 'auto']} tick={{fontSize: 10}} />
+                        <Tooltip formatter={(v, name) => [`${v} MiB`, name]} />
+                        <Legend />
+                        {metricsData.memory.keys.map((key, i) => (
+                          <Line key={key} type="monotone" dataKey={key} stroke={['#1a7a3a','#3a1fc1','#b85c00','#a00000'][i % 4]} dot={false} strokeWidth={2} />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -493,60 +537,6 @@ function App() {
           </div>
         )}
 
-        {metricsData && (
-          <div className="card mb-4">
-            <div className="card-header" onClick={() => setMetricsExpanded(!metricsExpanded)} style={{cursor: 'pointer'}}>
-              <h5 className="mb-0 d-flex justify-content-between align-items-center">
-                Juice Shop Pod Metrics
-                <span>{metricsExpanded ? '▼' : '▶'}</span>
-              </h5>
-            </div>
-            {metricsExpanded && (
-              <div className="card-body">
-                <div className="row mb-4">
-                  <div className="col-md-3 text-center">
-                    <div className={`p-3 rounded ${metricsData.status == 1 ? 'bg-success text-white' : 'bg-danger text-white'}`}>
-                      <strong>Pod Status</strong><br />
-                      {metricsData.status == 1 ? 'RUNNING' : 'DOWN'}
-                    </div>
-                  </div>
-                  <div className="col-md-3 text-center">
-                    <div className="p-3 rounded bg-light">
-                      <strong>Restarts</strong><br />
-                      {metricsData.restarts}
-                    </div>
-                  </div>
-                </div>
-                <h6>CPU Usage (%)</h6>
-                <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={metricsData.cpu.data} margin={{top: 5, right: 20, left: 10, bottom: 5}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis dataKey="time" tick={{fontSize: 10}} interval={10} />
-                    <YAxis tickFormatter={v => `${v}%`} domain={[0, 'auto']} tick={{fontSize: 10}} />
-                    <Tooltip formatter={(v, name) => [`${v}%`, name]} />
-                    <Legend />
-                    {metricsData.cpu.keys.map((key, i) => (
-                      <Line key={key} type="monotone" dataKey={key} stroke={['#3a1fc1','#1a7a3a','#b85c00','#a00000'][i % 4]} dot={false} strokeWidth={2} />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-                <h6 className="mt-4">Memory Usage (MiB)</h6>
-                <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={metricsData.memory.data} margin={{top: 5, right: 20, left: 10, bottom: 5}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis dataKey="time" tick={{fontSize: 10}} interval={10} />
-                    <YAxis tickFormatter={v => `${v} MiB`} domain={[0, 'auto']} tick={{fontSize: 10}} />
-                    <Tooltip formatter={(v, name) => [`${v} MiB`, name]} />
-                    <Legend />
-                    {metricsData.memory.keys.map((key, i) => (
-                      <Line key={key} type="monotone" dataKey={key} stroke={['#1a7a3a','#3a1fc1','#b85c00','#a00000'][i % 4]} dot={false} strokeWidth={2} />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        )}
 
         {(loading || zapLoading || hydraLoading || nvdLoading || codeLoading) && (
           <div className="loading-spinner">
