@@ -1,0 +1,36 @@
+name: Node.js CI
+
+on:
+  push:
+    paths:
+      - 'server.js'
+      - 'routes/**'
+      - 'lib/**'
+      - 'package.json'
+  pull_request:
+    paths:
+      - 'server.js'
+      - 'routes/**'
+      - 'lib/**'
+      - 'package.json'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install ESLint
+        run: npm install --save-dev eslint @eslint/js globals
+
+      - name: Run ESLint
+        run: npx eslint server.js routes/ lib/ --ext .js

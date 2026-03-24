@@ -33,3 +33,10 @@ Thumbs.db
 
 # Environment variables
 .env
+
+# Generated reports
+Reports/
+
+# ZAP scan output
+zap-report.json
+zap-aggressive-report.json
