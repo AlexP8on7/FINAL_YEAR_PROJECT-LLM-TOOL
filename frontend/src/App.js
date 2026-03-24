@@ -429,9 +429,9 @@ function App() {
                   <div className="border rounded mt-2 p-3">
                     <div className="row mb-4">
                       <div className="col-md-3 text-center">
-                        <div className={`p-3 rounded ${metricsData.status == 1 ? 'bg-success text-white' : 'bg-danger text-white'}`}>
+                        <div className={`p-3 rounded ${metricsData.status === 1 ? 'bg-success text-white' : 'bg-danger text-white'}`}>
                           <strong>Pod Status</strong><br />
-                          {metricsData.status == 1 ? 'RUNNING' : 'DOWN'}
+                          {metricsData.status === 1 ? 'RUNNING' : 'DOWN'}
                         </div>
                       </div>
                       <div className="col-md-3 text-center">

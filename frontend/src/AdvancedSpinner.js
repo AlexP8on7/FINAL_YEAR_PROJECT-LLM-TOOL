@@ -77,7 +77,7 @@ function AdvancedSpinner() {
       
       el.animate(keyframes, { duration, iterations });
     });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <svg
