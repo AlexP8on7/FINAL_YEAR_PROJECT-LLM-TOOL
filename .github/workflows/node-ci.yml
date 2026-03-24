@@ -30,7 +30,7 @@ jobs:
         run: npm install
 
       - name: Install ESLint
-        run: npm install --save-dev eslint
+        run: npm install --save-dev eslint @eslint/js
 
       - name: Run ESLint
         run: npx eslint server.js routes/ lib/ --ext .js
