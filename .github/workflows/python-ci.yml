@@ -1,0 +1,38 @@
+name: Python CI
+
+on:
+  push:
+    paths:
+      - 'llm-moniter/**'
+  pull_request:
+    paths:
+      - 'llm-moniter/**'
+
+jobs:
+  lint-and-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pylint pytest pytest-cov fastapi uvicorn transformers torch --quiet
+
+      - name: Run pylint
+        run: pylint llm-moniter/app.py --fail-under=7.0
+
+      - name: Run pytest with coverage
+        run: |
+          pytest llm-moniter/ --cov=llm-moniter --cov-report=term-missing --cov-report=xml -v || true
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage
+          path: coverage.xml
