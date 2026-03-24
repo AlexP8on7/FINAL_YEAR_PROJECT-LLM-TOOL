@@ -186,15 +186,15 @@ function App() {
 
   return (
     <div className={`App${darkMode ? ' dark-mode' : ''}`}>
+      <button className="theme-toggle" onClick={() => setDarkMode(d => !d)}>
+        {darkMode ? '☀️' : '🌙'}
+      </button>
       <div className="hero-section">
         <div className="container">
           <div className="row">
             <div className="col-12 text-center">
               <h1 className="display-4 mb-4">Kubernetes AI Monitor</h1>
               <p className="lead">AI-powered analysis of your Kubernetes cluster health and performance</p>
-              <button className="btn btn-outline-light btn-sm mt-3" onClick={() => setDarkMode(d => !d)}>
-                {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
-              </button>
             </div>
           </div>
         </div>

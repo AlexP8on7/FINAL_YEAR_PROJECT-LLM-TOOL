@@ -126,3 +126,16 @@
   justify-content: center;
   padding: 40px;
 }
+
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
