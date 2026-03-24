@@ -25,7 +25,7 @@ jobs:
         working-directory: frontend
 
       - name: Run ESLint
-        run: npx eslint src/ --ext .js,.jsx
+        run: npx eslint src/
         working-directory: frontend
 
       - name: Build
