@@ -11,10 +11,12 @@ router.post('/', async (req, res) => {
         const clusterInfo = await getKubectlInfo();
 
         const scanContext = [
-            store.codeScan   && `Latest Source Code Scan:\n${store.codeScan}`,
-            store.zapScan    && `Latest ZAP Scan:\n${store.zapScan}`,
-            store.hydraScan  && `Latest Hydra Scan:\n${store.hydraScan}`,
-            store.nvdScan    && `Latest NVD CVE Scan:\n${store.nvdScan}`,
+            store.codeScan      && `Latest Source Code Scan:\n${store.codeScan}`,
+            store.zapScan       && `Latest ZAP Scan:\n${store.zapScan}`,
+            store.hydraScan     && `Latest Hydra Scan:\n${store.hydraScan}`,
+            store.nvdScan       && `Latest NVD CVE Scan:\n${store.nvdScan}`,
+            store.kubeHunterScan && `Latest Kube-Hunter Scan:\n${store.kubeHunterScan}`,
+            store.stressAttack  && `Latest Stress & Exploit Attack:\n${store.stressAttack}`,
         ].filter(Boolean).join('\n\n');
 
         const systemPrompt = `You are a Kubernetes and security expert assistant with access to the user's live cluster data and latest scan results.

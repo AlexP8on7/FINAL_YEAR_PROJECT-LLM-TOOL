@@ -13,6 +13,10 @@ function App() {
   const [hydraLoading, setHydraLoading] = useState(false);
   const [nvdLoading, setNvdLoading] = useState(false);
   const [codeLoading, setCodeLoading] = useState(false);
+  const [kubeHunterLoading, setKubeHunterLoading] = useState(false);
+  const [stressLoading, setStressLoading] = useState(false);
+  const [exploitLoading, setExploitLoading] = useState(false);
+  const [stressMode, setStressMode] = useState('all');
   const [grafanaLoading, setGrafanaLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -21,6 +25,9 @@ function App() {
   const [hydraResult, setHydraResult] = useState(null);
   const [nvdResult, setNvdResult] = useState(null);
   const [codeResult, setCodeResult] = useState(null);
+  const [kubeHunterResult, setKubeHunterResult] = useState(null);
+  const [stressResult, setStressResult] = useState(null);
+  const [exploitResult, setExploitResult] = useState(null);
   const [metricsData, setMetricsData] = useState(null);
   const [metricsExpanded, setMetricsExpanded] = useState(true);
   const [chatMessages, setChatMessages] = useState([]);
@@ -32,6 +39,9 @@ function App() {
   const [hydraExpanded, setHydraExpanded] = useState(false);
   const [nvdExpanded, setNvdExpanded] = useState(false);
   const [codeExpanded, setCodeExpanded] = useState(false);
+  const [kubeHunterExpanded, setKubeHunterExpanded] = useState(false);
+  const [stressExpanded, setStressExpanded] = useState(false);
+  const [exploitExpanded, setExploitExpanded] = useState(false);
   const [chatExpanded, setChatExpanded] = useState(false);
 
   const checkStatus = async () => {
@@ -134,8 +144,8 @@ function App() {
         setMetricsData({
           cpu,
           memory,
-          restarts: response.data.restarts?.[0]?.values?.slice(-1)?.[0]?.[1] || 0,
-          status: response.data.status?.[0]?.values?.slice(-1)?.[0]?.[1] || 0
+          restarts: parseInt(response.data.restarts?.[0]?.values?.slice(-1)?.[0]?.[1] || 0),
+          status: parseFloat(response.data.status?.[0]?.values?.slice(-1)?.[0]?.[1] || 0)
         });
         setMetricsExpanded(true);
       }
@@ -143,6 +153,49 @@ function App() {
       setError('Failed to fetch metrics: ' + err.message);
     } finally {
       setGrafanaLoading(false);
+    }
+  };
+
+  const runExploitGen = async () => {
+    setExploitLoading(true);
+    setError(null);
+    setExploitResult(null);
+    try {
+      const response = await axios.post('/api/exploit-gen');
+      setExploitResult(response.data);
+      setExploitExpanded(true);
+    } catch (err) {
+      setError('Failed to generate exploits: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setExploitLoading(false);
+    }
+  };
+
+  const runStressAttack = async () => {
+    setStressLoading(true);
+    setError(null);
+    setStressResult(null);
+    try {
+      const response = await axios.post('/api/stress-attack', { mode: stressMode, floodCount: 100 });
+      setStressResult(response.data);
+    } catch (err) {
+      setError('Failed to run stress attack: ' + err.message);
+    } finally {
+      setStressLoading(false);
+    }
+  };
+
+  const runKubeHunter = async () => {
+    setKubeHunterLoading(true);
+    setError(null);
+    setKubeHunterResult(null);
+    try {
+      const response = await axios.post('/api/kube-hunter');
+      setKubeHunterResult(response.data);
+    } catch (err) {
+      setError('Failed to run Kube-Hunter: ' + err.message);
+    } finally {
+      setKubeHunterLoading(false);
     }
   };
 
@@ -284,6 +337,54 @@ function App() {
 
         </div>
 
+        <div className="row mb-5">
+          <div className="col-md-4 mb-4">
+            <div className="card status-card h-100 shadow-sm">
+              <div className="card-body text-center">
+                <div className="feature-icon"></div>
+                <h5 className="card-title">Kube-Hunter</h5>
+                <p className="card-text">Simulate attacks on the cluster and discover Kubernetes security weaknesses</p>
+                <button className="btn-hydra" onClick={runKubeHunter} disabled={kubeHunterLoading}>
+                  {kubeHunterLoading ? (<><span className="spinner-border spinner-border-sm me-2" />Hunting...</>) : 'Kube-Hunter Scan'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-4 mb-4">
+            <div className="card status-card h-100 shadow-sm">
+              <div className="card-body text-center">
+                <div className="feature-icon"></div>
+                <h5 className="card-title">Stress & Exploit Attack</h5>
+                <p className="card-text">Flood requests, exploit payloads, and resource exhaustion against Juice Shop</p>
+                <select className="form-select form-select-sm mb-2" value={stressMode} onChange={e => setStressMode(e.target.value)}>
+                  <option value="all">All Attacks</option>
+                  <option value="flood">HTTP Flood Only</option>
+                  <option value="exploit">Exploit Payloads Only</option>
+                  <option value="resource">Resource Exhaustion Only</option>
+                </select>
+                <button className="btn-simulate-attack" onClick={runStressAttack} disabled={stressLoading}>
+                  {stressLoading ? (<><span className="spinner-border spinner-border-sm me-2" />Attacking...</>) : 'Run Attack'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-4 mb-4">
+            <div className="card status-card h-100 shadow-sm">
+              <div className="card-body text-center">
+                <div className="feature-icon"></div>
+                <h5 className="card-title">AI Exploit Generator</h5>
+                <p className="card-text">Generate working exploit scripts from your scan results using AI</p>
+                <button className="btn-code" onClick={runExploitGen} disabled={exploitLoading}>
+                  {exploitLoading ? (<><span className="spinner-border spinner-border-sm me-2" />Generating...</>) : 'Generate Exploits'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
         {error && (
           <div className="alert alert-danger" role="alert">
             <strong>Error:</strong> {error}
@@ -360,7 +461,11 @@ function App() {
                     {chatMessages.map((msg, index) => (
                       <div key={index} className={`mb-2 ${msg.type === 'user' ? 'text-end' : 'text-start'}`}>
                         <div className={`d-inline-block p-2 rounded ${msg.type === 'user' ? 'bg-primary text-white' : msg.type === 'error' ? 'bg-danger text-white' : 'bg-light'}`} style={{ maxWidth: '80%' }}>
-                          <strong>{msg.type === 'user' ? 'You' : msg.type === 'error' ? 'Error' : 'AI'}:</strong> {msg.message}
+                          <strong>{msg.type === 'user' ? 'You' : msg.type === 'error' ? 'Error' : 'AI'}:</strong>
+                          {msg.type === 'ai'
+                            ? <ReactMarkdown>{msg.message}</ReactMarkdown>
+                            : ` ${msg.message}`
+                          }
                         </div>
                       </div>
                     ))}
@@ -547,7 +652,61 @@ function App() {
         )}
 
 
-        {(loading || zapLoading || hydraLoading || nvdLoading || codeLoading) && (
+        {stressResult && (
+          <div className="card mb-4">
+            <div className="card-header" onClick={() => setStressExpanded(!stressExpanded)} style={{cursor: 'pointer'}}>
+              <h5 className="mb-0 d-flex justify-content-between align-items-center">
+                Stress & Exploit Attack Results
+                <span>{stressExpanded ? '▼' : '▶'}</span>
+              </h5>
+            </div>
+            {stressExpanded && (
+              <div className="card-body">
+                <div className="analysis-content">
+                  <ReactMarkdown>{stressResult.analysis}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {exploitResult && (
+          <div className="card mb-4">
+            <div className="card-header" onClick={() => setExploitExpanded(!exploitExpanded)} style={{cursor: 'pointer'}}>
+              <h5 className="mb-0 d-flex justify-content-between align-items-center">
+                AI Generated Exploits
+                <span>{exploitExpanded ? '▼' : '▶'}</span>
+              </h5>
+            </div>
+            {exploitExpanded && (
+              <div className="card-body">
+                <div className="analysis-content">
+                  <ReactMarkdown>{exploitResult.exploits}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {kubeHunterResult && (
+          <div className="card mb-4">
+            <div className="card-header" onClick={() => setKubeHunterExpanded(!kubeHunterExpanded)} style={{cursor: 'pointer'}}>
+              <h5 className="mb-0 d-flex justify-content-between align-items-center">
+                Kube-Hunter Security Analysis
+                <span>{kubeHunterExpanded ? '▼' : '▶'}</span>
+              </h5>
+            </div>
+            {kubeHunterExpanded && (
+              <div className="card-body">
+                <div className="analysis-content">
+                  <ReactMarkdown>{kubeHunterResult.analysis}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {(loading || zapLoading || hydraLoading || nvdLoading || codeLoading || kubeHunterLoading || stressLoading || exploitLoading) && (
           <div className="loading-spinner">
             <div className="text-center">
               <AdvancedSpinner />
@@ -557,6 +716,9 @@ function App() {
                 {hydraLoading && "Running Hydra brute-force test..."}
                 {nvdLoading && "Fetching CVE data from NVD database..."}
                 {codeLoading && "Extracting and analyzing source code..."}
+                {kubeHunterLoading && "Running Kube-Hunter attack simulation (this may take ~2 minutes)..."}
+                {stressLoading && "Running attack simulation against Juice Shop..."}
+                {exploitLoading && "AI is generating exploits from scan results..."}
               </p>
             </div>
           </div>
