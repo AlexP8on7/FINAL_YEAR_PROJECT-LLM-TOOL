@@ -15,7 +15,6 @@
 
 .App-header {
   background-color: #282c34;
-  padding: 20px;
   color: white;
 }
 
@@ -55,7 +54,7 @@
 }
 
 .btn-simulate-attack {
-    background: linear-gradient(to right, #640606, #DC143C); /* Dark red to crimson gradient */
+    background: linear-gradient(to right, #640606, #DC143C);
     color: #fff;
     border: 2px solid #eee;
     padding: 12px 24px;
@@ -65,7 +64,7 @@
 }
 
 .btn-hydra {
-    background: linear-gradient(to right, #684107, #d87b02); /*Dark Yellow to Gold */
+    background: linear-gradient(to right, #640606, #DC143C);
     color: #fff;
     border: 2px solid #eee;
     padding: 12px 24px;
@@ -75,7 +74,7 @@
 }
 
 .btn-nvd {
-    background: linear-gradient(to right, #360e24, #d80298); /*Dark Yellow to Gold */
+    background: linear-gradient(to right, #360e24, #d80298);
     color: #fff;
     border: 2px solid #eee;
     padding: 12px 24px;
@@ -85,23 +84,73 @@
 }
 
 .btn-code {
-    background: linear-gradient(to right, #1a0e36, #6b02d8); /* Dark purple to violet */
+    background: linear-gradient(to right, #1a0e36, #6b02d8);
     color: #fff;
-    border: 2px solid #eee;
+    border: 2px solid #000000;
     padding: 12px 24px;
     font-size: 1.2rem;
     min-width: 180px;
     transition: all 0.3s ease;
 }
 
-.btn-grafana {
-    background: linear-gradient(to right, #0e3a1a, #02a86b); /* Dark green to teal */
-    color: #fff;
-    border: 2px solid #eee;
+.btn-green {
+    background: linear-gradient(to right, #e59e07, #e59e07);
+    color: #26301b;
+    border: 2px solid #000000;
     padding: 12px 24px;
     font-size: 1.2rem;
     min-width: 180px;
     transition: all 0.3s ease;
+}
+
+.btn-red {
+    background: linear-gradient(to right, #d10707, #d10707);
+    color: #000000;
+    border: 2px solid #000000;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 180px;
+    transition: all 0.3s ease;
+}
+
+.hero-section {
+  margin-bottom: 0;
+}
+
+.top-navbar {
+  background-color: #e59e07;
+  display: flex;
+  gap: 8px;
+  padding: 0 24px;
+  width: 100%;
+}
+
+.top-navbar-link {
+  color: #000000;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 14px 24px;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: background 0.2s;
+}
+
+.top-navbar-link:hover {
+  background-color: rgba(0,0,0,0.15);
+  color: #000000;
+  text-decoration: none;
+}
+
+.section-navbar {
+  background-color: #e59e07;
+  color: #000000;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  margin-top: 80px;
+  letter-spacing: 0.05em;
 }
 
 .spinner {
