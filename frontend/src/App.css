@@ -123,6 +123,9 @@
   gap: 8px;
   padding: 0 24px;
   width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .top-navbar-link {

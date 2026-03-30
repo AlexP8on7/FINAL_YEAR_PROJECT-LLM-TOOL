@@ -260,12 +260,13 @@ function App() {
       </div>
 
       <nav className="top-navbar">
+        <a href="#chat" className="top-navbar-link">Chat with AI</a>
         <a href="#passive-scans" className="top-navbar-link">Passive Scans</a>
         <a href="#exploits" className="top-navbar-link">Exploits</a>
       </nav>
 
       <div className="container">
-        <div className="card mb-4">
+        <div id="chat" className="card mb-4">
           <div className="card-body">
             <h5 className="card-title">Chat with AI</h5>
             <div className="mb-3">
