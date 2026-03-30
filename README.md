@@ -59,6 +59,8 @@ npm start
 npm start
 #Port forwad Juice-shop
 kubectl port-forward svc/juice-shop 8080:3000
+kubectl port-forward svc/prometheus-prometheus -n monitoring 9090:9090
+
 
 ```
 ## Usage

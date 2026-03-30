@@ -237,6 +237,12 @@ function App() {
     document.body.classList.toggle('dark-mode', darkMode);
   }, [darkMode]);
 
+  React.useEffect(() => {
+    if (!metricsData) return;
+    const interval = setInterval(openGrafana, 5000);
+    return () => clearInterval(interval);
+  }, [metricsData]);
+
   return (
     <div className={`App${darkMode ? ' dark-mode' : ''}`}>
       <button className="theme-toggle" onClick={() => setDarkMode(d => !d)}>
@@ -380,6 +386,13 @@ function App() {
                       </div>
                     </div>
                     <h6>CPU Usage (%)</h6>
+                    {(() => {
+                      const lastPoint = metricsData.cpu.data[metricsData.cpu.data.length - 1];
+                      const cpuOver35 = metricsData.cpu.keys.some(k => (lastPoint?.[k] ?? 0) > 35);
+                      return (
+                      <>
+                      {cpuOver35 && <div className="text-danger fw-bold mb-1">⚠️ CPU usage exceeded 35%!</div>}
+                    <div className={cpuOver35 ? 'cpu-alert' : ''}>
                     <ResponsiveContainer width="100%" height={220}>
                       <LineChart data={metricsData.cpu.data} margin={{top: 5, right: 20, left: 10, bottom: 5}}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#444" />
@@ -392,6 +405,10 @@ function App() {
                         ))}
                       </LineChart>
                     </ResponsiveContainer>
+                    </div>
+                      </>
+                      );
+                    })()}
                     <h6 className="mt-4">Memory Usage (MiB)</h6>
                     <ResponsiveContainer width="100%" height={220}>
                       <LineChart data={metricsData.memory.data} margin={{top: 5, right: 20, left: 10, bottom: 5}}>
