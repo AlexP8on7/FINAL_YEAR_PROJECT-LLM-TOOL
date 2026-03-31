@@ -32,7 +32,6 @@ function App() {
   const [metricsExpanded, setMetricsExpanded] = useState(true);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
-  const [error, setError] = useState(null);
   const [statusExpanded, setStatusExpanded] = useState(false);
   const [analysisExpanded, setAnalysisExpanded] = useState(false);
   const [zapExpanded, setZapExpanded] = useState(false);
@@ -46,13 +45,11 @@ function App() {
 
   const checkStatus = async () => {
     setStatusLoading(true);
-    setError(null);
-    
     try {
       const response = await axios.get('/api/status');
       setStatusResult(response.data);
     } catch (err) {
-      setError('Failed to check cluster status: ' + err.message);
+      console.error('Failed to check cluster status:', err.message);
     } finally {
       setStatusLoading(false);
     }
@@ -60,14 +57,12 @@ function App() {
 
   const runAnalysis = async () => {
     setLoading(true);
-    setError(null);
     setAnalysisResult(null);
-    
     try {
       const response = await axios.post('/api/analyze');
       setAnalysisResult(response.data);
     } catch (err) {
-      setError('Failed to run analysis: ' + err.message);
+      console.error('Failed to run analysis:', err.message);
     } finally {
       setLoading(false);
     }
@@ -75,14 +70,12 @@ function App() {
 
   const simulateAttack = async () => {
     setZapLoading(true);
-    setError(null);
     setZapResult(null);
-    
     try {
       const response = await axios.post('/api/zap-attack');
       setZapResult(response.data);
     } catch (err) {
-      setError('Failed to run ZAP attack: ' + err.message);
+      console.error('Failed to run ZAP attack:', err.message);
     } finally {
       setZapLoading(false);
     }
@@ -90,14 +83,12 @@ function App() {
 
   const runHydraScan = async () => {
     setHydraLoading(true);
-    setError(null);
     setHydraResult(null);
-    
     try {
       const response = await axios.post('/api/hydra-scan');
       setHydraResult(response.data);
     } catch (err) {
-      setError('Failed to run Hydra scan: ' + err.message);
+      console.error('Failed to run Hydra scan:', err.message);
     } finally {
       setHydraLoading(false);
     }
@@ -105,14 +96,12 @@ function App() {
 
   const runNvdScan = async () => {
     setNvdLoading(true);
-    setError(null);
     setNvdResult(null);
-    
     try {
       const response = await axios.post('/api/nvd-scan', { keywords: 'kubernetes', resultsPerPage: 10 });
       setNvdResult(response.data);
     } catch (err) {
-      setError('Failed to run NVD scan: ' + err.message);
+      console.error('Failed to run NVD scan:', err.message);
     } finally {
       setNvdLoading(false);
     }
@@ -120,7 +109,6 @@ function App() {
 
   const openGrafana = async () => {
     setGrafanaLoading(true);
-    setError(null);
     try {
       const response = await axios.get('/api/metrics');
       if (response.data.success) {
@@ -150,7 +138,7 @@ function App() {
         setMetricsExpanded(true);
       }
     } catch (err) {
-      setError('Failed to fetch metrics: ' + err.message);
+      console.error('Failed to fetch metrics:', err.message);
     } finally {
       setGrafanaLoading(false);
     }
@@ -158,14 +146,13 @@ function App() {
 
   const runExploitGen = async () => {
     setExploitLoading(true);
-    setError(null);
     setExploitResult(null);
     try {
       const response = await axios.post('/api/exploit-gen');
       setExploitResult(response.data);
       setExploitExpanded(true);
     } catch (err) {
-      setError('Failed to generate exploits: ' + (err.response?.data?.error || err.message));
+      console.error('Failed to generate exploits:', err.response?.data?.error || err.message);
     } finally {
       setExploitLoading(false);
     }
@@ -173,13 +160,12 @@ function App() {
 
   const runStressAttack = async () => {
     setStressLoading(true);
-    setError(null);
     setStressResult(null);
     try {
       const response = await axios.post('/api/stress-attack', { mode: stressMode, floodCount: 100 });
       setStressResult(response.data);
     } catch (err) {
-      setError('Failed to run stress attack: ' + err.message);
+      console.error('Failed to run stress attack:', err.message);
     } finally {
       setStressLoading(false);
     }
@@ -187,13 +173,12 @@ function App() {
 
   const runKubeHunter = async () => {
     setKubeHunterLoading(true);
-    setError(null);
     setKubeHunterResult(null);
     try {
       const response = await axios.post('/api/kube-hunter');
       setKubeHunterResult(response.data);
     } catch (err) {
-      setError('Failed to run Kube-Hunter: ' + err.message);
+      console.error('Failed to run Kube-Hunter:', err.message);
     } finally {
       setKubeHunterLoading(false);
     }
@@ -201,14 +186,12 @@ function App() {
 
   const runCodeScan = async () => {
     setCodeLoading(true);
-    setError(null);
     setCodeResult(null);
-    
     try {
       const response = await axios.post('/api/code-scan');
       setCodeResult(response.data);
     } catch (err) {
-      setError('Failed to run code scan: ' + err.message);
+      console.error('Failed to run code scan:', err.message);
     } finally {
       setCodeLoading(false);
     }
