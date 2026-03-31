@@ -31,73 +31,12 @@
   }
 }
 
-.btn-check-status {
-    background: #4e54c8;  /* fallback for old browsers */
-    background: -webkit-linear-gradient(to right, #f1f1f1, #3d0311);  /* Chrome 10-25, Safari 5.1-6 */
-    background: linear-gradient(to right, #0e1a5e, #1a37db); 
-    color: #fff;
-    border: 2px solid #eee;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    min-width: 180px;
-}
-
-.btn-Ai-analysis {
-    background: #4e54c8;  /* fallback for old browsers */
-    background: -webkit-linear-gradient(to right, #f1f1f1, #3d0311);  /* Chrome 10-25, Safari 5.1-6 */
-    background: linear-gradient(to right, #09270d, #04940b);
-    color: #fff;
-    border: 2px solid #eee;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    min-width: 180px;
-}
-
-.btn-simulate-attack {
-    background: linear-gradient(to right, #640606, #DC143C);
-    color: #fff;
-    border: 2px solid #eee;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    min-width: 180px;
-    transition: all 0.3s ease;
-}
-
-.btn-hydra {
-    background: linear-gradient(to right, #640606, #DC143C);
-    color: #fff;
-    border: 2px solid #eee;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    min-width: 180px;
-    transition: all 0.3s ease;
-}
-
-.btn-nvd {
-    background: linear-gradient(to right, #360e24, #d80298);
-    color: #fff;
-    border: 2px solid #eee;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    min-width: 180px;
-    transition: all 0.3s ease;
-}
-
-.btn-code {
-    background: linear-gradient(to right, #1a0e36, #6b02d8);
-    color: #fff;
-    border: 2px solid #000000;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    min-width: 180px;
-    transition: all 0.3s ease;
-}
-
 .btn-green {
     background: linear-gradient(to right, #e59e07, #e59e07);
     color: #26301b;
-    border: 2px solid #000000;
+    border: 2px solid #e59e07;
     padding: 12px 24px;
+    border-radius: 6px;
     font-size: 1.2rem;
     min-width: 180px;
     transition: all 0.3s ease;
@@ -106,8 +45,9 @@
 .btn-red {
     background: linear-gradient(to right, #d10707, #d10707);
     color: #000000;
-    border: 2px solid #000000;
+    border: 2px solid #d10707;
     padding: 12px 24px;
+    border-radius: 6px;
     font-size: 1.2rem;
     min-width: 180px;
     transition: all 0.3s ease;

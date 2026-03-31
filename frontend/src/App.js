@@ -402,7 +402,7 @@ function App() {
                         <Tooltip formatter={(v, name) => [`${v}%`, name]} />
                         <Legend />
                         {metricsData.cpu.keys.map((key, i) => (
-                          <Line key={key} type="monotone" dataKey={key} stroke={['#3a1fc1','#1a7a3a','#b85c00','#a00000'][i % 4]} dot={false} strokeWidth={2} />
+                          <Line key={key} type="monotone" dataKey={key} stroke={'#ff4444'} dot={false} strokeWidth={2} />
                         ))}
                       </LineChart>
                     </ResponsiveContainer>
@@ -419,7 +419,7 @@ function App() {
                         <Tooltip formatter={(v, name) => [`${v} MiB`, name]} />
                         <Legend />
                         {metricsData.memory.keys.map((key, i) => (
-                          <Line key={key} type="monotone" dataKey={key} stroke={['#1a7a3a','#3a1fc1','#b85c00','#a00000'][i % 4]} dot={false} strokeWidth={2} />
+                          <Line key={key} type="monotone" dataKey={key} stroke={'#399d28'} dot={false} strokeWidth={2} />
                         ))}
                       </LineChart>
                     </ResponsiveContainer>
