@@ -17,7 +17,7 @@ function App() {
   const [stressLoading, setStressLoading] = useState(false);
   const [exploitLoading, setExploitLoading] = useState(false);
   const [stressMode, setStressMode] = useState('all');
-  const [grafanaLoading, setGrafanaLoading] = useState(false);
+  const [metricsLoading, setMetricsLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [statusResult, setStatusResult] = useState(null);
@@ -107,8 +107,8 @@ function App() {
     }
   };
 
-  const openGrafana = async () => {
-    setGrafanaLoading(true);
+  const fetchMetrics = async () => {
+    setMetricsLoading(true);
     try {
       const response = await axios.get('/api/metrics');
       if (response.data.success) {
@@ -140,7 +140,7 @@ function App() {
     } catch (err) {
       console.error('Failed to fetch metrics:', err.message);
     } finally {
-      setGrafanaLoading(false);
+      setMetricsLoading(false);
     }
   };
 
@@ -222,7 +222,7 @@ function App() {
 
   React.useEffect(() => {
     if (!metricsData) return;
-    const interval = setInterval(openGrafana, 5000);
+    const interval = setInterval(fetchMetrics, 5000);
     return () => clearInterval(interval);
   }, [metricsData]);
 
@@ -235,8 +235,8 @@ function App() {
         <div className="container">
           <div className="row">
             <div className="col-12 text-center">
-              <h1 className="display-4 mb-4">Kubernetes AI Monitor</h1>
-              <p className="lead">AI-powered analysis of your Kubernetes cluster health and performance</p>
+              <h1 className="display-4 mb-4">Kubernetes AI Security Monitor</h1>
+              <p className="lead">AI-powered security analysis of your Kubernetes cluster health and performance</p>
             </div>
           </div>
         </div>
@@ -260,8 +260,8 @@ function App() {
                 <button className="btn btn-outline-success btn-sm" onClick={runAnalysis} disabled={loading}>
                   {loading ? (<><span className="spinner-border spinner-border-sm me-1" />Analyzing...</>) : 'AI Analysis'}
                 </button>
-                <button className="btn btn-outline-info btn-sm" onClick={openGrafana} disabled={grafanaLoading}>
-                  {grafanaLoading ? (<><span className="spinner-border spinner-border-sm me-1" />Loading...</>) : 'View Metrics'}
+                <button className="btn btn-outline-info btn-sm" onClick={fetchMetrics} disabled={metricsLoading}>
+                  {metricsLoading ? (<><span className="spinner-border spinner-border-sm me-1" />Loading...</>) : 'View Metrics'}
                 </button>
               </div>
             </div>
@@ -372,10 +372,10 @@ function App() {
                     <h6>CPU Usage (%)</h6>
                     {(() => {
                       const lastPoint = metricsData.cpu.data[metricsData.cpu.data.length - 1];
-                      const cpuOver35 = metricsData.cpu.keys.some(k => (lastPoint?.[k] ?? 0) > 35);
+                      const cpuOver35 = metricsData.cpu.keys.some(k => (lastPoint?.[k] ?? 0) > 5);
                       return (
                       <>
-                      {cpuOver35 && <div className="text-danger fw-bold mb-1">⚠️ CPU usage exceeded 35%!</div>}
+                      {cpuOver35 && <div className="text-danger fw-bold mb-1">⚠️ CPU usage exceeded 5%!</div>}
                     <div className={cpuOver35 ? 'cpu-alert' : ''}>
                     <ResponsiveContainer width="100%" height={220}>
                       <LineChart data={metricsData.cpu.data} margin={{top: 5, right: 20, left: 10, bottom: 5}}>
