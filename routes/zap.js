@@ -8,11 +8,11 @@ const store = require('../lib/store');
 
 function runZapAttack(targetUrl) {
     return new Promise((resolve) => {
-        const actualTarget = 'http://host.docker.internal:8080';
+        const actualTarget = 'http://172.17.0.1:8080';
         const workDir = process.cwd();
-        const zapCmd = `docker run --rm -v "${workDir}:/zap/wrk/:rw" zaproxy/zap-stable zap-full-scan.py -t ${actualTarget} -J zap-report.json -j`;
+        const zapCmd = `docker run --rm -v "${workDir}:/zap/wrk/:rw" zaproxy/zap-stable zap-full-scan.py -t ${actualTarget} -J zap-report.json -j -m 2`;
 
-        exec(zapCmd, { timeout: 300000 }, (error, stdout, stderr) => {
+        exec(zapCmd, { timeout: 120000 }, (error, stdout, stderr) => {
             if (error && error.code !== 2) {
                 return resolve({ success: false, error: `Docker command failed: ${error.message}`, stdout, stderr });
             }

@@ -8,9 +8,8 @@
     "@testing-library/user-event": "^13.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "axios": "^1.4.0",
     "react-markdown": "^8.0.7",
+    "react-scripts": "5.0.1",
     "recharts": "^2.12.7",
     "web-vitals": "^2.1.4"
   },
@@ -38,5 +37,5 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:3001"
+  "proxy": "http://52.200.85.193:3001"
 }
