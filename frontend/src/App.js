@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import AdvancedSpinner from './AdvancedSpinner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -46,8 +45,8 @@ function App() {
   const checkStatus = async () => {
     setStatusLoading(true);
     try {
-      const response = await axios.get('/api/status');
-      setStatusResult(response.data);
+      const response = await fetch('/api/status');
+      setStatusResult(await response.json());
     } catch (err) {
       console.error('Failed to check cluster status:', err.message);
     } finally {
@@ -59,8 +58,8 @@ function App() {
     setLoading(true);
     setAnalysisResult(null);
     try {
-      const response = await axios.post('/api/analyze');
-      setAnalysisResult(response.data);
+      const response = await fetch('/api/analyze', { method: 'POST' });
+      setAnalysisResult(await response.json());
     } catch (err) {
       console.error('Failed to run analysis:', err.message);
     } finally {
@@ -72,8 +71,8 @@ function App() {
     setZapLoading(true);
     setZapResult(null);
     try {
-      const response = await axios.post('/api/zap-attack');
-      setZapResult(response.data);
+      const response = await fetch('/api/zap-attack', { method: 'POST' });
+      setZapResult(await response.json());
     } catch (err) {
       console.error('Failed to run ZAP attack:', err.message);
     } finally {
@@ -85,8 +84,8 @@ function App() {
     setHydraLoading(true);
     setHydraResult(null);
     try {
-      const response = await axios.post('/api/hydra-scan');
-      setHydraResult(response.data);
+      const response = await fetch('/api/hydra-scan', { method: 'POST' });
+      setHydraResult(await response.json());
     } catch (err) {
       console.error('Failed to run Hydra scan:', err.message);
     } finally {
@@ -98,8 +97,12 @@ function App() {
     setNvdLoading(true);
     setNvdResult(null);
     try {
-      const response = await axios.post('/api/nvd-scan', { keywords: 'kubernetes', resultsPerPage: 10 });
-      setNvdResult(response.data);
+      const response = await fetch('/api/nvd-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywords: 'kubernetes', resultsPerPage: 10 })
+      });
+      setNvdResult(await response.json());
     } catch (err) {
       console.error('Failed to run NVD scan:', err.message);
     } finally {
@@ -110,8 +113,9 @@ function App() {
   const fetchMetrics = async () => {
     setMetricsLoading(true);
     try {
-      const response = await axios.get('/api/metrics');
-      if (response.data.success) {
+      const response = await fetch('/api/metrics');
+      const data = await response.json();
+      if (data.success) {
         const buildChartData = (result, transform) => {
           const seriesMap = {};
           result.forEach((r, i) => {
@@ -127,13 +131,13 @@ function App() {
             keys: result.map((r, i) => r.metric.container || r.metric.pod || `series${i}`)
           };
         };
-        const cpu = buildChartData(response.data.cpu, v => parseFloat((parseFloat(v) * 100).toFixed(4)));
-        const memory = buildChartData(response.data.memory, v => parseFloat((parseFloat(v) / 1024 / 1024).toFixed(2)));
+        const cpu = buildChartData(data.cpu, v => parseFloat((parseFloat(v) * 100).toFixed(4)));
+        const memory = buildChartData(data.memory, v => parseFloat((parseFloat(v) / 1024 / 1024).toFixed(2)));
         setMetricsData({
           cpu,
           memory,
-          restarts: parseInt(response.data.restarts?.[0]?.values?.slice(-1)?.[0]?.[1] || 0),
-          status: parseFloat(response.data.status?.[0]?.values?.slice(-1)?.[0]?.[1] || 0)
+          restarts: parseInt(data.restarts?.[0]?.values?.slice(-1)?.[0]?.[1] || 0),
+          status: parseFloat(data.status?.[0]?.values?.slice(-1)?.[0]?.[1] || 0)
         });
         setMetricsExpanded(true);
       }
@@ -148,11 +152,11 @@ function App() {
     setExploitLoading(true);
     setExploitResult(null);
     try {
-      const response = await axios.post('/api/exploit-gen');
-      setExploitResult(response.data);
+      const response = await fetch('/api/exploit-gen', { method: 'POST' });
+      setExploitResult(await response.json());
       setExploitExpanded(true);
     } catch (err) {
-      console.error('Failed to generate exploits:', err.response?.data?.error || err.message);
+      console.error('Failed to generate exploits:', err.message);
     } finally {
       setExploitLoading(false);
     }
@@ -162,8 +166,12 @@ function App() {
     setStressLoading(true);
     setStressResult(null);
     try {
-      const response = await axios.post('/api/stress-attack', { mode: stressMode, floodCount: 100 });
-      setStressResult(response.data);
+      const response = await fetch('/api/stress-attack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: stressMode, floodCount: 100 })
+      });
+      setStressResult(await response.json());
     } catch (err) {
       console.error('Failed to run stress attack:', err.message);
     } finally {
@@ -175,8 +183,8 @@ function App() {
     setKubeHunterLoading(true);
     setKubeHunterResult(null);
     try {
-      const response = await axios.post('/api/kube-hunter');
-      setKubeHunterResult(response.data);
+      const response = await fetch('/api/kube-hunter', { method: 'POST' });
+      setKubeHunterResult(await response.json());
     } catch (err) {
       console.error('Failed to run Kube-Hunter:', err.message);
     } finally {
@@ -188,8 +196,8 @@ function App() {
     setCodeLoading(true);
     setCodeResult(null);
     try {
-      const response = await axios.post('/api/code-scan');
-      setCodeResult(response.data);
+      const response = await fetch('/api/code-scan', { method: 'POST' });
+      setCodeResult(await response.json());
     } catch (err) {
       console.error('Failed to run code scan:', err.message);
     } finally {
@@ -207,8 +215,13 @@ function App() {
     setChatLoading(true);
     
     try {
-      const response = await axios.post('/api/chat', { message: userMessage });
-      setChatMessages(prev => [...prev, { type: 'ai', message: response.data.response }]);
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage })
+      });
+      const data = await response.json();
+      setChatMessages(prev => [...prev, { type: 'ai', message: data.response }]);
     } catch (err) {
       setChatMessages(prev => [...prev, { type: 'error', message: 'Failed to get AI response: ' + err.message }]);
     } finally {
